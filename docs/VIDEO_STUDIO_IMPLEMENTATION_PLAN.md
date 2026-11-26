@@ -10,6 +10,13 @@
 6. Keyboard: J (step back 10 frames), K (pause), L (play), ←/→ frame step, Shift+←/→ 1 s, Delete removes the selection.
 7. Dead code removed (an unwired snapping helper) rather than shipping a control with no effect.
 
+## Second pass (this session)
+
+8. Frame-accurate timebase: every clip time quantised to the frame grid with integer
+   `startFrame`/`durationFrames`/`inFrame` persisted; exporter quantises cuts identically.
+9. Captions: SRT/WebVTT import → title-track clips, SRT/VTT export and download, all through a
+   pure, unit-tested `captions.cjs`. Burn-in comes free because captions are ordinary title clips.
+
 ## Next (ordered by dependency, not by appeal)
 
 1. **Frame renderer.** Offscreen canvas compositor that draws the timeline at arbitrary `t` and pipes frames

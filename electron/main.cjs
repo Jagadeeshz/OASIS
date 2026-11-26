@@ -16,6 +16,7 @@ const { TimelineService } = require('./services/timeline.cjs');
 const { ExportService } = require('./services/exporter.cjs');
 const catalog = require('./services/providers/catalog.cjs');
 const media = require('./services/media.cjs');
+const captions = require('./services/captions.cjs');
 const deepseek = require('./services/providers/deepseek.cjs');
 const ollama = require('./services/providers/ollama.cjs');
 const falAdapter = require('./services/providers/fal.cjs');
@@ -250,6 +251,13 @@ function registerIpc() {
   handle('projects:update', (id, patch) => projects.update(id, patch || {}));
   handle('projects:archive', (id, archived) => projects.archive(id, archived !== false));
   handle('projects:remove', (id) => projects.remove(id));
+
+  // Captions: pure parsing/serialising, exposed so the renderer never re-implements it.
+  handle('captions:parse', (text) => captions.parseCues(text));
+  handle('captions:toClips', (cues, style) => captions.clipsFromCues(Array.isArray(cues) ? cues : [], style || {}));
+  handle('captions:fromTrack', (track, fps) => captions.cuesFromTrack(track || {}, Number(fps) || 30));
+  handle('captions:toSrt', (cues) => captions.toSrt(Array.isArray(cues) ? cues : []));
+  handle('captions:toVtt', (cues) => captions.toVtt(Array.isArray(cues) ? cues : []));
 
   // Canvas exports from PhotoCraft arrive as base64 PNG data URLs.
   handle('assets:savePng', (projectId, dataUrl, meta = {}) => {

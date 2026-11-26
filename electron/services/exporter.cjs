@@ -27,7 +27,8 @@ function escFilterPath(p) {
 function buildRender(timeline, assets, { tmpDir }) {
   const { width, height, fps } = timeline;
   let end = 0;
-  for (const t of timeline.tracks) for (const c of t.clips) end = Math.max(end, c.start + c.duration);
+  const qf = (v) => Math.round(Number(v) * Number(timeline.fps || 30)) / Number(timeline.fps || 30);
+  for (const t of timeline.tracks) for (const c of t.clips) end = Math.max(end, qf(c.start) + qf(c.duration));
   const total = Math.max(0.5, Math.round(end * 1000) / 1000);
 
   const inputs = [];

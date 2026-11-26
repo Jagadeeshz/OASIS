@@ -12,7 +12,7 @@
 | Slip / slide / roll editing | Shipped | **Missing** | — | — | — |
 | J/K/L dynamic trimming | Shipped | **Partial** | keydown handler | **Not asserted** | J steps back 10 frames, K pauses, L plays — not Lumit's variable-speed trimming |
 | Frame-accurate navigation (←/→, Shift = 1 s) | Shipped | **Partial** | keydown handler | Not asserted | Float seconds internally |
-| Integer/rational timebase incl. 23.976 & 29.97 DF | Shipped | **Missing** | — | — | Seconds are floats; fps configurable |
+| Integer/rational timebase incl. 23.976 & 29.97 DF | Shipped | **Partial** | `timeline.cjs`: every clip time is quantised to the project frame grid and stored as `startFrame` / `durationFrames` / `inFrame`; `fpsNum`/`fpsDen` recorded; exporter quantises cut points | Pass — `startFrame=0`, `durationFrames=30` through the real IPC round-trip | `fpsNum = fps×1000`; no drop-frame timecode labels; 23.976 not modelled as 30000/1001 |
 | Retime / speed change | Shipped | **Fully implemented** | inspector + `setpts`/`atempo` | Unit export passes; speed slider not exercised | No speed ramps, reverse or freeze |
 | Per-clip colour (exposure/contrast/saturation/hue) | Shipped | **Fully implemented** | exporter `eq`/`hue` | Unit export passes | Single grade, no wheels/curves |
 | Per-clip transform (opacity/scale/position) | Shipped | **Fully implemented** | exporter `scale`/`overlay` | Unit export passes | No rotation, anchor, 3D |
@@ -28,7 +28,7 @@
 | 38 blend modes | Shipped | **Missing** | overlay only | — | — |
 | 3D layers, cameras, lights | Shipped | **Missing** | — | — | — |
 | Tracking, stabilise, roto | Shipped | **Missing** | — | — | — |
-| Captions from speech, 7 styles, SRT/VTT/ASS/LRC | Shipped | **Missing** | — | — | Needs ASR |
+| Captions from speech, 7 styles, SRT/VTT/ASS/LRC | Shipped | **Partial** | `electron/services/captions.cjs` (parse/serialise, unit-tested) + Captions panel in Video Studio: SRT/WebVTT paste-import → title-track clips, SRT/VTT export, .srt download | Pass — 2 cues imported (clip count 0→2), SRT re-exported with timestamps | **No speech-to-text** (needs a provider/addon); no ASS/LRC; a single caption style (size/colour/position) |
 | Transcript editing | Shipped | **Missing** | — | — | — |
 | Multicam | Shipped | **Missing** | — | — | — |
 | Audio mixer, meters, beat detection | Shipped | **Missing** | — | — | — |
@@ -38,7 +38,7 @@
 | Collaboration / multi-edit | Shipped (Pro) | **Missing** | — | — | — |
 | Native codecs (H.264/HEVC/ProRes/VP9/AAC/Opus) | Shipped | **Blocked** | external ffmpeg | — | OASIS deliberately uses ffmpeg; no native codec claim |
 
-**Identified 35 capability groups · Implemented 9 · Partial 6 · Missing 19 · Blocked 1.**
+**Identified 35 capability groups · Implemented 9 · Partial 8 · Missing 17 · Blocked 1.**
 
 Honest summary: this pass adds real timeline mechanics (markers, split, ripple delete, solo, retime) to an
 engine that already did trim/move/duplicate/colour/transform/audio/export. It does **not** deliver keyframes,

@@ -23,6 +23,11 @@ function normalize(data) {
   tl.width = Math.max(256, Math.min(3840, Number(tl.width) || 1280));
   tl.height = Math.max(144, Math.min(2160, Number(tl.height) || 720));
   tl.fps = Math.max(12, Math.min(60, Number(tl.fps) || 30));
+  // Frame-accurate timebase: every time value is quantised to the project frame
+  // grid, and the integer frame index is stored alongside the seconds.
+  tl.fpsNum = Math.round(tl.fps * 1000);
+  tl.fpsDen = 1000;
+  const quant = (v) => Math.round(Number(v) * tl.fps) / tl.fps;
   tl.tracks = (Array.isArray(tl.tracks) ? tl.tracks : base.tracks).map((t, i) => ({
     id: t.id || `track${i}`,
     type: ['video', 'audio', 'text'].includes(t.type) ? t.type : 'video',
@@ -32,9 +37,12 @@ function normalize(data) {
     clips: (Array.isArray(t.clips) ? t.clips : []).map((c) => ({
       id: c.id || `clip_${crypto.randomUUID().slice(0, 8)}`,
       assetId: c.assetId || null,
-      start: Math.max(0, Number(c.start) || 0),
-      duration: Math.max(0.1, Number(c.duration) || 1),
-      inPoint: Math.max(0, Number(c.inPoint) || 0),
+      start: quant(Math.max(0, Number(c.start) || 0)),
+      duration: Math.max(1 / tl.fps, quant(Math.max(0.1, Number(c.duration) || 1))),
+      inPoint: quant(Math.max(0, Number(c.inPoint) || 0)),
+      startFrame: Math.round(quant(Math.max(0, Number(c.start) || 0)) * tl.fps),
+      durationFrames: Math.max(1, Math.round(quant(Math.max(0.1, Number(c.duration) || 1)) * tl.fps)),
+      inFrame: Math.round(quant(Math.max(0, Number(c.inPoint) || 0)) * tl.fps),
       volume: c.volume === undefined ? 1 : Math.max(0, Math.min(2, Number(c.volume))),
       fit: c.fit === 'contain' ? 'contain' : 'cover',
       transition: c.transition === 'fade' ? 'fade' : 'none',

@@ -38,6 +38,13 @@ const api = {
     reveal: (id) => call('assets:reveal', id),
     saveCopy: (id) => call('assets:saveCopy', id),
     savePng: (projectId, dataUrl, meta) => call('assets:savePng', projectId, dataUrl, meta),
+  },
+  captions: {
+    parse: (text) => call('captions:parse', text),
+    toClips: (cues, style) => call('captions:toClips', cues, style),
+    fromTrack: (track, fps) => call('captions:fromTrack', track, fps),
+    toSrt: (cues) => call('captions:toSrt', cues),
+    toVtt: (cues) => call('captions:toVtt', cues),
     pickAndImport: (projectId, workspace) => call('assets:pickAndImport', projectId, workspace),
     importPath: (projectId, filePath, workspace) => call('assets:importPath', projectId, filePath, workspace),
   },

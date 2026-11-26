@@ -109,6 +109,43 @@ export default function VideoStudio() {
 
   const [markers, setMarkers] = useState<number[]>([]);
 
+  const [captionsOpen, setCaptionsOpen] = useState(false);
+  const [captionText, setCaptionText] = useState('');
+
+  const importCaptions = async () => {
+    const cues: any[] = await api.captions.parse(captionText);
+    if (!cues.length) return toast('No cues found in that text', 'warn');
+    const clips: any[] = await api.captions.toClips(cues, { fontSize: 44, color: '#ffffff', y: 0.86, box: true });
+    setData((d) => {
+      const track = d.tracks.find((t) => t.type === 'text') || { id: 't1', type: 'text', name: 'Titles', clips: [] };
+      return {
+        ...d,
+        tracks: d.tracks.map((t) => (t.id === track.id ? { ...t, clips: [...t.clips, ...clips] } : t)),
+      };
+    });
+    setDirty(true);
+    toast(`${cues.length} captions placed on the title track`, 'success');
+  };
+
+  const exportCaptions = async () => {
+    const track = data.tracks.find((t) => t.type === 'text');
+    const cues: any[] = await api.captions.fromTrack(track, data.fps);
+    if (!cues.length) return toast('No captions on the title track', 'warn');
+    const srt: string = await api.captions.toSrt(cues);
+    setCaptionText(srt);
+    toast(`${cues.length} cues written as SRT`, 'success');
+  };
+
+  const downloadCaptions = () => {
+    if (!captionText.trim()) return toast('Nothing to download', 'warn');
+    const blob = new Blob([captionText], { type: 'text/plain;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${name.replace(/[^a-z0-9-_ ]/gi, '') || 'captions'}.srt`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  };
+
   const soloMemory = useRef<Record<string, boolean>>({});
   const toggleSolo = (trackId: string) => {
     setData((d) => {
@@ -785,6 +822,37 @@ export default function VideoStudio() {
           <Btn size="sm" variant="ghost" onClick={addMarker} title="Add a marker at the playhead (M)">
             Marker
           </Btn>
+          {captionsOpen ? (
+            <div
+              style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 60, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              onClick={() => setCaptionsOpen(false)}
+            >
+              <div className="panel pad" style={{ width: 760, maxHeight: '80vh', overflow: 'auto' }} onClick={(e) => e.stopPropagation()}>
+                <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                  <strong>Captions</strong>
+                  <Btn size="sm" variant="ghost" onClick={() => setCaptionsOpen(false)}>Close</Btn>
+                </div>
+                <div className="tiny muted-2 mt-8">
+                  Paste SRT or WebVTT to place captions on the title track — they render in the preview and in the export.
+                  Export writes the title track back out as SRT.
+                </div>
+                <textarea
+                  className="input"
+                  aria-label="Captions text"
+                  rows={12}
+                  style={{ width: '100%', marginTop: 8, fontFamily: 'ui-monospace, monospace', fontSize: 12 }}
+                  value={captionText}
+                  onChange={(e) => setCaptionText(e.target.value)}
+                  placeholder={'1\n00:00:00,000 --> 00:00:02,000\nFirst line of dialogue'}
+                />
+                <div className="row wrap" style={{ gap: 8, marginTop: 10 }}>
+                  <Btn size="sm" variant="primary" onClick={importCaptions} disabled={!captionText.trim()}>Import to timeline</Btn>
+                  <Btn size="sm" variant="ghost" onClick={exportCaptions} disabled={!data.tracks.some((t) => t.type === 'text' && t.clips.length)}>Export SRT</Btn>
+                  <Btn size="sm" variant="ghost" onClick={downloadCaptions} disabled={!captionText.trim()}>Download .srt</Btn>
+                </div>
+              </div>
+            </div>
+          ) : null}
           {markers.map((m) => (
             <button
               key={m}
@@ -796,6 +864,9 @@ export default function VideoStudio() {
               {fmtDuration(m)}
             </button>
           ))}
+          <Btn size="sm" variant="ghost" onClick={() => setCaptionsOpen(true)} title="Import or export captions (SRT / WebVTT)">
+            Captions
+          </Btn>
           <Btn size="sm" variant="ghost" onClick={splitAtPlayhead} title="Split the clip under the playhead (S)">
             Split
           </Btn>
