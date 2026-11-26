@@ -1,0 +1,78 @@
+{
+  "name": "oasis",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OASIS - integrated AI creative production desktop application",
+  "main": "electron/main.cjs",
+  "author": "OASIS",
+  "license": "MIT",
+  "scripts": {
+    "dev": "concurrently -k \"vite\" \"wait-on http://localhost:5173 && cross-env OASIS_DEV_SERVER=http://localhost:5173 electron .\"",
+    "build": "vite build",
+    "start": "electron .",
+    "test": "node --test tests/*.test.cjs",
+    "package": "npm run build && electron-builder --win nsis",
+    "package:dir": "npm run build && electron-builder --win dir"
+  },
+  "dependencies": {
+    "@xyflow/react": "^13.0.3",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "sql.js": "^1.17.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.11",
+    "@types/react": "^19.3.3",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.3.0",
+    "concurrently": "^10.0.7",
+    "cross-env": "^10.1.0",
+    "electron": "^45.5.0",
+    "electron-builder": "^26.18.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.8",
+    "wait-on": "^9.5.1"
+  },
+  "build": {
+    "appId": "com.quantocos.oasis",
+    "productName": "OASIS",
+    "copyright": "OASIS",
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**/*",
+      "dist/**/*",
+      "package.json",
+      "node_modules/sql.js/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/fal-schemas",
+        "to": "fal-schemas"
+      },
+      {
+        "from": "docs",
+        "to": "docs"
+      }
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "OASIS"
+    }
+  }
+}

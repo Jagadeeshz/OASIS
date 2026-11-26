@@ -1,0 +1,36 @@
+
+> oasis@0.1.0 test
+> node --test tests/*.test.cjs
+
+✔ timeline export renders a real mp4 with a provenance manifest (2193.2502ms)
+✔ export fails cleanly when a clip references a missing asset (184.1072ms)
+✔ timeline save/load normalizes clips and reports duration (19.7054ms)
+✔ mock generation is deterministic, labelled and saved to Asset Studio (2653.2901ms)
+✔ fal is mocked with a truthful reason while the key is missing (315.3519ms)
+✔ fal live job downloads results and records verified provenance (226.2851ms)
+✔ provider auth failures fail the job without leaking the key (29.5047ms)
+✔ provider connection tests are truthful and isolated (49.0733ms)
+✔ local ffmpeg op produces a versioned asset (skipped without ffmpeg) (300.9285ms)
+✔ deepseek connection test distinguishes auth failure from success (87.6994ms)
+✔ deepseek prompt enhancement posts an OpenAI-compatible chat request (3.635ms)
+✔ ollama reports unreachable clearly and never throws at the caller (1.5671ms)
+✔ ollama lists and uses installed models (1.8862ms)
+✔ fal connection probe never triggers a generation (1.9437ms)
+✔ fal submit builds queue URLs from the response and surfaces auth errors (3.0467ms)
+✔ database persists projects across reopen and migrations are idempotent (189.426ms)
+✔ secret vault stores, hints, clears and never writes plaintext (48.4966ms)
+✔ model catalog is internally consistent and covers the required tasks (1.0624ms)
+✔ param validation enforces declared enums and ranges (1.0566ms)
+✔ asset ingest records metadata, tags and versions (1301.9298ms)
+✔ a saved workflow executes in dependency order and saves to Asset Studio (1332.1125ms)
+✔ invalid port connections and cycles are rejected before execution (1.3599ms)
+✔ workflow rejects invalid graphs on save and on run (25.3865ms)
+✔ workflow edits round-trip through save and load (36.6882ms)
+ℹ tests 24
+ℹ suites 0
+ℹ pass 24
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3743.8486

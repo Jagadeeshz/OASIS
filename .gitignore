@@ -1,0 +1,35 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# build output
+dist/
+release/
+build/icon.png.bak
+
+# runtime data that must never be committed
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+storage/
+exports/
+vault.json
+.hermes/
+
+# environment / secrets
+.env
+.env.*
+!.env.example
+
+# test + verification artefacts
+shots/
+coverage/
+*.log
+
+# editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini
