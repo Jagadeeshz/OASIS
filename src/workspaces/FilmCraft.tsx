@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { api, Asset } from '../lib/api';
+import FilmCraftTimeline from './VideoStudio';
 import { useApp } from '../lib/store';
 import { AssetCard, AssetPicker, Badge, Btn, Empty, Field, MockBadge, Spinner, Tabs } from '../components/ui';
 import { JobProgress, ParamsForm, PromptEnhancer, ResultStrip, useJobWatch } from '../components/job';
 
-export default function FilmCraft() {
+export function FilmCraftGenerate() {
   const { projectId, models, providers, assets, toast, sendAsset, consumeHandoff, refreshAssets, setNav } = useApp();
   const [mode, setMode] = useState<'t2v' | 'i2v'>('t2v');
   const [modelId, setModelId] = useState('fal-ai/wan/v2.2-a14b/text-to-video');
@@ -267,6 +268,30 @@ export default function FilmCraft() {
         title={picker === 'end' ? 'Choose an end frame' : 'Choose a start frame'}
         currentId={(picker === 'end' ? endFrame : source)?.id}
       />
+    </div>
+  );
+}
+
+
+/* ── workspace shell: AI generation + the professional timeline editor ── */
+export default function FilmCraft() {
+  const [tab, setTab] = React.useState<'generate' | 'edit'>('generate');
+  return (
+    <div className="stack">
+      <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+        <Btn size="sm" variant={tab === 'generate' ? 'primary' : 'ghost'} onClick={() => setTab('generate')}>
+          Generate (AI)
+        </Btn>
+        <Btn size="sm" variant={tab === 'edit' ? 'primary' : 'ghost'} onClick={() => setTab('edit')}>
+          Edit timeline
+        </Btn>
+        <span className="tiny muted-2">
+          {tab === 'edit'
+            ? 'Multitrack timeline, trim/split, colour, transforms, titles, audio mixing and ffmpeg export.'
+            : 'Text-to-video and image-to-video through the configured provider.'}
+        </span>
+      </div>
+      {tab === 'edit' ? <FilmCraftTimeline /> : <FilmCraftGenerate />}
     </div>
   );
 }

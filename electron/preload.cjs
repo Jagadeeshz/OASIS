@@ -37,6 +37,7 @@ const api = {
     versions: (id) => call('assets:versions', id),
     reveal: (id) => call('assets:reveal', id),
     saveCopy: (id) => call('assets:saveCopy', id),
+    savePng: (projectId, dataUrl, meta) => call('assets:savePng', projectId, dataUrl, meta),
     pickAndImport: (projectId, workspace) => call('assets:pickAndImport', projectId, workspace),
     importPath: (projectId, filePath, workspace) => call('assets:importPath', projectId, filePath, workspace),
   },

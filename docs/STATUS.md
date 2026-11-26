@@ -121,3 +121,11 @@ None of these block using the application today: it installs, runs, stores, edit
 | User data | `%APPDATA%\oasis` (db, media, exports, vault) |
 | Docs | `docs/` (architecture, installation, testing, user guide, provider setup, assumptions, plan) |
 | Test evidence | `docs/evidence/` + `shots/` |
+
+## 2026-11-26 — native creative workspaces
+
+- PhotoCraft gained a native raster editor (Edit tab): layers, 16 blend modes, 4 adjustment layers, 8 filters, brush/eraser/eyedropper/selection/crop/type tools, undo/redo, PNG export to Asset Studio via the new `assets:savePng` IPC.
+- FilmCraft gained an **Edit timeline** tab that mounts the existing timeline engine (one engine, no duplication).
+- EffectsCraft unchanged this pass; parity documented (9 real operations vs the official 259).
+- Parity status: PhotoCraft 13 implemented / 7 partial / 14 missing; FilmCraft 6 / 4 / 12; EffectsCraft 3 / 2 / 5.
+- Verified: 10/10 desktop checks (`scripts/verify-creative.mjs`), unit suite green, typecheck + build clean.

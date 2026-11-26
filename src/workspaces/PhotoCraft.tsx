@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { api, Asset } from '../lib/api';
+import PhotoCraftEditor from './PhotoCraftEditor';
 import { useApp } from '../lib/store';
 import { AssetCard, AssetPicker, Badge, Btn, Empty, Field, MockBadge, Spinner, Tabs } from '../components/ui';
 import { JobProgress, ParamsForm, PromptEnhancer, ResultStrip, useJobWatch } from '../components/job';
@@ -10,7 +11,7 @@ const MODES = {
   removebg: { task: 'image.removeBackground', defaultModel: 'fal-ai/imageutils/rembg', hint: 'Cut out the subject' },
 } as const;
 
-export default function PhotoCraft() {
+export function PhotoCraftGenerate() {
   const { projectId, models, providers, assets, toast, sendAsset, consumeHandoff, refreshAssets, setNav } = useApp();
   const [mode, setMode] = useState<keyof typeof MODES>('create');
   const [modelId, setModelId] = useState<string>(MODES.create.defaultModel);
@@ -273,6 +274,30 @@ export default function PhotoCraft() {
       </div>
 
       <AssetPicker open={pickerOpen} onClose={() => setPickerOpen(false)} onPick={setSource} mediaType="image" title="Choose a source image" currentId={source?.id} />
+    </div>
+  );
+}
+
+
+/* ── workspace shell: native editor + AI generation ── */
+export default function PhotoCraft() {
+  const [tab, setTab] = React.useState<'edit' | 'generate'>('edit');
+  return (
+    <div className="stack">
+      <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+        <Btn size="sm" variant={tab === 'edit' ? 'primary' : 'ghost'} onClick={() => setTab('edit')}>
+          Edit
+        </Btn>
+        <Btn size="sm" variant={tab === 'generate' ? 'primary' : 'ghost'} onClick={() => setTab('generate')}>
+          Generate (AI)
+        </Btn>
+        <span className="tiny muted-2">
+          {tab === 'edit'
+            ? 'Native canvas: layers, adjustment layers, filters, type, selections, export to Asset Studio.'
+            : 'Prompt-to-image through the configured provider; results land in Asset Studio.'}
+        </span>
+      </div>
+      {tab === 'edit' ? <PhotoCraftEditor /> : <PhotoCraftGenerate />}
     </div>
   );
 }

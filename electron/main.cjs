@@ -251,6 +251,28 @@ function registerIpc() {
   handle('projects:archive', (id, archived) => projects.archive(id, archived !== false));
   handle('projects:remove', (id) => projects.remove(id));
 
+  // Canvas exports from PhotoCraft arrive as base64 PNG data URLs.
+  handle('assets:savePng', (projectId, dataUrl, meta = {}) => {
+    const m = /^data:image\/png;base64,(.+)$/.exec(String(dataUrl || ''));
+    if (!m) throw new Error('Expected a base64 PNG data URL');
+    const buffer = Buffer.from(m[1], 'base64');
+    if (buffer.length < 8) throw new Error('Empty image');
+    const width = Number(meta.width) || null;
+    const height = Number(meta.height) || null;
+    return assets.createFromBuffer(buffer, {
+      projectId,
+      ext: 'png',
+      mime: 'image/png',
+      mediaType: 'image',
+      sourceWorkspace: 'photocraft',
+      displayName: meta.name || 'canvas',
+      originalName: `${meta.name || 'canvas'}.png`,
+      verification: 'unverified',
+      executionMode: 'local-edit',
+      metadata: { editor: 'photocraft-native', width, height, layers: meta.layers ?? null },
+    });
+  });
+
   handle('assets:list', (opts) => assets.list(opts || {}));
   handle('assets:get', (id) => assets.get(id));
   handle('assets:stats', (projectId) => assets.count(projectId));
