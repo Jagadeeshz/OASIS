@@ -85,13 +85,14 @@ Details and the token map: [THEME.md](THEME.md).
 
 | Step | Command / action | Result |
 |---|---|---|
-| Build installer | `npm run package` | **success** → `release\OASIS Setup 0.1.0.exe` (134,051,871 bytes) |
+| Build installer | `npm run package` | **success** → `release\OASIS Setup 0.1.0.exe` (134,051,871 bytes; rebuilt after the theme change at 134,189,428 bytes, SHA-256 in `docs/evidence/installer-sha256.txt`) |
 | Dev data set aside | `%APPDATA%\oasis` renamed | fresh profile forced |
 | Install to clean directory | `"OASIS Setup 0.1.0.exe" /S /D=C:\Users\Jagadeesh\AppData\Local\Temp\oasis-install-test` | **exit code 0**, `OASIS.exe` (250 MB) installed there |
 | Launch installed app | `OASIS.exe --remote-debugging-port=9334` | window opened; renderer URL `file:///…/oasis-install-test/resources/app.asar/dist/index.html` — **packaged asar, no Vite, no dev server** |
 | Fresh profile boot | first launch | new `%APPDATA%\oasis\oasis.db` created, "Welcome project" auto-created |
 | E2E against installed app | `CDP_PORT=9334 node scripts/e2e.mjs` | **8/8 passed** (`docs/evidence/e2e-installed-report.json`) |
 | Restart persistence | killed app, relaunched installed exe | 1 project, **3 assets (all mock-labelled)**, 2 jobs, 1 export `succeeded` with manifest `mock-unverified` |
+| Reinstall after theming | same `/S /D=…` install over the test directory, then relaunch | exit 0; installed renderer reports `#09090B` ground, DM Sans + Cormorant loaded from `app.asar`, yellow CTA — theme ships in the installer (`shots/theme/installed-app.png`, `docs/evidence/theme-audit.txt`) |
 | Cleanup | test profile moved to `%APPDATA%\oasis-installed-testdata`, dev data restored | — |
 
 This is a genuine installer test: the binary that ran was installed by NSIS from the generated setup executable, and it loaded its own `app.asar`.

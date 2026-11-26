@@ -1,0 +1,6 @@
+{
+  "fonts": "{\"dmSans\":true,\"dmMono\":true,\"cormorant\":true,\"bodyFamily\":\"\\\"DM Sans\\\", system-ui, -apple-system, \\\"Segoe UI\\\", sans-serif\",\"h1Family\":\"\\\"Cormorant Garamond\\\", Georgia, \\\"Times New Roman\\\", serif\"}",
+  "tokens": "{\"void\":\"#09090b\",\"bodyBg\":\"rgb(9, 9, 11)\",\"bodyColor\":\"rgb(245, 245, 240)\",\"primaryBtnBg\":\"linear-gradient(120deg, rgb(255, 228, 92) 0%, rgb(255, 212, 0) 54%, rgb(234, 185, 0) 100%)\",\"primaryBtnColor\":\"rgb(9, 9, 11)\",\"activeNavBg\":\"rgba(255, 212, 0, 0.09)\",\"activeNavColor\":\"rgb(245, 245, 240)\",\"contrast\":{\"textOnVoid\":18.19,\"secondaryOnPanel\":7.3,\"mutedOnPanel\":5.28,\"inkOnLumen\":13.9,\"imageBadgeOnVoid\":6.56,\"videoBadgeOnVoid\":7.12,\"audioBadgeOnVoid\":9.88}}",
+  "console": "no error toast"
+}
+screens: 19 → C:\Users\Jagadeesh\Desktop\oasis\shots\theme
