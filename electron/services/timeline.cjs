@@ -47,6 +47,7 @@ function normalize(data) {
       saturation: c.saturation === undefined ? 1 : Math.max(0, Math.min(3, Number(c.saturation))),
       hue: Math.max(-180, Math.min(180, Number(c.hue) || 0)),
       audioFade: c.audioFade === undefined ? 0 : Math.max(0, Math.min(5, Number(c.audioFade))),
+      speed: c.speed === undefined ? 1 : Math.max(0.25, Math.min(4, Number(c.speed))),
       ...(t.type === 'text'
         ? {
             text: String(c.text || 'Title'),

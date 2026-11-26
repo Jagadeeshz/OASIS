@@ -96,6 +96,8 @@ function buildRender(timeline, assets, { tmpDir }) {
         : '';
     const transform = tScale !== 1 ? `,scale=iw*${tScale}:ih*${tScale}` : '';
     const alpha = tOpacity < 1 ? `,format=rgba,colorchannelmixer=aa=${tOpacity}` : '';
+    const speed = Math.max(0.25, Math.min(4, Number(clip.speed ?? 1)));
+    const pts = speed === 1 ? `PTS-STARTPTS+${start}/TB` : `(PTS-STARTPTS)/${speed}+${start}/TB`;
     const posX = Number(clip.posX || 0);
     const posY = Number(clip.posY || 0);
     const overlayXY =
@@ -103,7 +105,7 @@ function buildRender(timeline, assets, { tmpDir }) {
         ? `x=(W-w)/2+${posX}*W:y=(H-h)/2+${posY}*H`
         : 'x=0:y=0';
     filters.push(
-      `[${i}:v]fps=${fps},${scale}${transform}${colour}${alpha},setsar=1,setpts=PTS-STARTPTS+${start}/TB${fades}[vc${vCount}]`,
+      `[${i}:v]fps=${fps},${scale}${transform}${colour}${alpha},setsar=1,setpts=${pts}${fades}[vc${vCount}]`,
     );
     filters.push(
       `${lastVideo}[vc${vCount}]overlay=${overlayXY}:eof_action=pass:enable='between(t,${start},${start + dur})'[v${vCount}]`,
@@ -150,7 +152,10 @@ function buildRender(timeline, assets, { tmpDir }) {
       fade > 0
         ? `,afade=t=in:st=0:d=${Math.min(fade, (Number(clip.duration) || 1) / 2)},afade=t=out:st=${Math.max(0, (Number(clip.duration) || 1) - fade)}:d=${Math.min(fade, (Number(clip.duration) || 1) / 2)}`
         : '';
-    filters.push(`[${i}:a]atrim=0:${Number(clip.duration) || 1},asetpts=PTS-STARTPTS,volume=${vol}${afade},adelay=${delayMs}:all=1${label}`);
+    const speed = Math.max(0.25, Math.min(4, Number(clip.speed ?? 1)));
+    const atempo = speed === 1 ? '' : `,atempo=${speed <= 2 ? speed : 2}${speed > 2 ? `,atempo=${speed / 2}` : ''}${speed < 0.5 ? '' : ''}`;
+    const atempoSlow = speed < 0.5 ? `,atempo=0.5,atempo=${speed / 0.5}` : '';
+    filters.push(`[${i}:a]atrim=0:${Number(clip.duration) || 1},asetpts=PTS-STARTPTS,volume=${vol}${afade}${atempo}${atempoSlow},adelay=${delayMs}:all=1${label}`);
     audioChains.push(label);
     aCount++;
   }

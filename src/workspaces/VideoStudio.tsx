@@ -107,6 +107,115 @@ export default function VideoStudio() {
     return track && c ? { track, clip: c } : null;
   }, [selected, data]);
 
+  const [markers, setMarkers] = useState<number[]>([]);
+
+  const soloMemory = useRef<Record<string, boolean>>({});
+  const toggleSolo = (trackId: string) => {
+    setData((d) => {
+      const target = d.tracks.find((t) => t.id === trackId);
+      if (!target) return d;
+      const isSolo = Object.keys(soloMemory.current).length > 0;
+      if (!isSolo) {
+        d.tracks.forEach((t) => { soloMemory.current[t.id] = !!t.muted; });
+        return { ...d, tracks: d.tracks.map((t) => ({ ...t, muted: t.id === trackId ? false : true })) };
+      }
+      const restored = d.tracks.map((t) => ({ ...t, muted: !!soloMemory.current[t.id] }));
+      soloMemory.current = {};
+      return { ...d, tracks: restored };
+    });
+    setDirty(true);
+    toast(Object.keys(soloMemory.current).length ? 'Solo on' : 'Solo cleared', 'info');
+  };
+
+  const addMarker = () => {
+    setMarkers((m) => [...m, Number(playhead.toFixed(3))].sort((a, b) => a - b));
+    toast(`Marker at ${fmtDuration(playhead)}`, 'success');
+  };
+
+  const rippleDelete = () => {
+    if (!selected) return;
+    const track = data.tracks.find((t) => t.id === selected.trackId);
+    const target = track?.clips.find((c) => c.id === selected.clipId);
+    if (!track || !target) return;
+    setData((d) => ({
+      ...d,
+      tracks: d.tracks.map((t) =>
+        t.id !== track.id
+          ? t
+          : {
+              ...t,
+              clips: t.clips
+                .filter((c) => c.id !== target.id)
+                .map((c) => (c.start > target.start ? { ...c, start: Math.max(0, c.start - target.duration) } : c)),
+            },
+      ),
+    }));
+    setSelected(null);
+    setDirty(true);
+    toast('Ripple delete', 'success');
+  };
+
+  const splitAtPlayhead = () => {
+    const t = playhead;
+    const hit = data.tracks
+      .filter((tr) => tr.type === 'video' || tr.type === 'audio')
+      .flatMap((tr) => tr.clips.filter((c) => t > c.start + 0.02 && t < c.start + c.duration - 0.02).map((c) => ({ tr, c })))[0];
+    if (!hit) return toast('Playhead is not over a clip', 'warn');
+    const left = { ...hit.c, duration: t - hit.c.start };
+    const right = { ...hit.c, id: newId(), start: t, duration: hit.c.start + hit.c.duration - t, inPoint: hit.c.inPoint + (t - hit.c.start) };
+    setData((d) => ({
+      ...d,
+      tracks: d.tracks.map((tr) =>
+        tr.id !== hit.tr.id ? tr : { ...tr, clips: [...tr.clips.filter((c) => c.id !== hit.c.id), left, right].sort((a, b) => a.start - b.start) },
+      ),
+    }));
+    setDirty(true);
+    toast('Split at playhead', 'success');
+  };
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement;
+      if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.tagName === 'SELECT')) return;
+      const step = 1 / (data.fps || 30);
+      switch (e.key.toLowerCase()) {
+        case 'j':
+          setPlaying(false);
+          setPlayhead((v) => Math.max(0, v - step * 10));
+          break;
+        case 'k':
+          setPlaying(false);
+          break;
+        case 'l':
+          setPlaying(true);
+          break;
+        case 'm':
+          addMarker();
+          break;
+        case 's':
+          if (!e.ctrlKey && !e.metaKey) splitAtPlayhead();
+          break;
+        case 'arrowleft':
+          e.preventDefault();
+          setPlayhead((v) => Math.max(0, v - (e.shiftKey ? 1 : step)));
+          break;
+        case 'arrowright':
+          e.preventDefault();
+          setPlayhead((v) => Math.min(duration, v + (e.shiftKey ? 1 : step)));
+          break;
+        case 'delete':
+        case 'backspace':
+          if (selected) removeSelected();
+          break;
+        default:
+          break;
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [playhead, selected, duration, data.fps, markers]);
+
   const loadTimelines = useCallback(async () => {
     const list = await api.timelines.list(projectId);
     setTimelines(list);
@@ -417,6 +526,7 @@ export default function VideoStudio() {
 
   const startDrag = (e: React.PointerEvent, track: TimelineTrack, c: any, mode: 'move' | 'trimL' | 'trimR') => {
     e.stopPropagation();
+    setPlaying(false);
     if ((track as any).locked) {
       toast('Track is locked — unlock it to edit', 'warn');
       return;
@@ -672,6 +782,26 @@ export default function VideoStudio() {
 
       <div className="timeline-panel panel">
         <div className="timeline-toolbar">
+          <Btn size="sm" variant="ghost" onClick={addMarker} title="Add a marker at the playhead (M)">
+            Marker
+          </Btn>
+          {markers.map((m) => (
+            <button
+              key={m}
+              className="btn btn-sm btn-ghost marker-chip"
+              title={`Marker at ${fmtDuration(m)} — click to jump`}
+              onClick={() => setPlayhead(m)}
+              aria-label={`Marker ${fmtDuration(m)}`}
+            >
+              {fmtDuration(m)}
+            </button>
+          ))}
+          <Btn size="sm" variant="ghost" onClick={splitAtPlayhead} title="Split the clip under the playhead (S)">
+            Split
+          </Btn>
+          <Btn size="sm" variant="ghost" onClick={rippleDelete} disabled={!selected} title="Delete the clip and close the gap">
+            Ripple delete
+          </Btn>
           <Btn size="sm" variant="ghost" onClick={addText} title="Add a title at the playhead">
             + Text
           </Btn>
@@ -709,6 +839,14 @@ export default function VideoStudio() {
                   <span>{trackLabel(track)} {track.name}</span>
                   <span className="tiny muted-2">{track.clips.length} clips</span>
                   <div className="row" style={{ gap: 4, marginTop: 2 }}>
+                    <button
+                      className="track-btn"
+                      title={(track as any).solo ? 'Unsolo track' : 'Solo track (mutes every other track)'}
+                      aria-label={(track as any).solo ? 'Unsolo track' : 'Solo track'}
+                      onClick={(e) => { e.stopPropagation(); toggleSolo(track.id); }}
+                    >
+                      {(track as any).solo ? 'S' : 's'}
+                    </button>
                     <button
                       className="track-btn"
                       title={track.muted ? 'Unmute track' : 'Mute track (excluded from preview and export)'}
@@ -846,6 +984,21 @@ export default function VideoStudio() {
           <Btn size="sm" variant="ghost" onClick={() => patchClip(clip.track.id, clip.clip.id, { brightness: 0, contrast: 1, saturation: 1, hue: 0 } as any)}>
             Reset colour
           </Btn>
+
+          <div className="tiny muted-2 mt-16 mb-8">RETIME</div>
+          <Field label={`Speed ${(Number((clip.clip as any).speed ?? 1)).toFixed(2)}×`}>
+            <input
+              type="range"
+              aria-label="Speed"
+              min={0.25}
+              max={4}
+              step={0.05}
+              value={Number((clip.clip as any).speed ?? 1)}
+              onChange={(e) => patchClip(clip.track.id, clip.clip.id, { speed: Number(e.target.value) } as any)}
+              style={{ width: '100%' }}
+            />
+          </Field>
+          <div className="tiny muted-2">Speed is applied on export with setpts/atempo, so the rendered file matches the preview rate.</div>
 
           <div className="tiny muted-2 mt-16 mb-8">TRANSFORM</div>
           {[
