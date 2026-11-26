@@ -38,6 +38,15 @@ function normalize(data) {
       volume: c.volume === undefined ? 1 : Math.max(0, Math.min(2, Number(c.volume))),
       fit: c.fit === 'contain' ? 'contain' : 'cover',
       transition: c.transition === 'fade' ? 'fade' : 'none',
+      opacity: c.opacity === undefined ? 1 : Math.max(0, Math.min(1, Number(c.opacity))),
+      scale: c.scale === undefined ? 1 : Math.max(0.1, Math.min(3, Number(c.scale))),
+      posX: c.posX === undefined ? 0 : Math.max(-1, Math.min(1, Number(c.posX))),
+      posY: c.posY === undefined ? 0 : Math.max(-1, Math.min(1, Number(c.posY))),
+      brightness: Math.max(-1, Math.min(1, Number(c.brightness) || 0)),
+      contrast: c.contrast === undefined ? 1 : Math.max(0, Math.min(3, Number(c.contrast))),
+      saturation: c.saturation === undefined ? 1 : Math.max(0, Math.min(3, Number(c.saturation))),
+      hue: Math.max(-180, Math.min(180, Number(c.hue) || 0)),
+      audioFade: c.audioFade === undefined ? 0 : Math.max(0, Math.min(5, Number(c.audioFade))),
       ...(t.type === 'text'
         ? {
             text: String(c.text || 'Title'),

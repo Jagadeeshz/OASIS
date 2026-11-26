@@ -33,6 +33,49 @@ const cssToken = (name: string, fallback: string) => {
   return out;
 };
 
+// Paint one clip with its colour, opacity and transform applied.
+const paintClip = (
+  ctx: CanvasRenderingContext2D,
+  media: HTMLImageElement | HTMLVideoElement,
+  W: number,
+  H: number,
+  asset: any,
+  c: any,
+) => {
+  const opacity = Math.max(0, Math.min(1, Number(c.opacity ?? 1)));
+  const brightness = Number(c.brightness || 0);
+  const contrast = Number(c.contrast ?? 1);
+  const saturation = Number(c.saturation ?? 1);
+  const hue = Number(c.hue || 0);
+  const scale = Number(c.scale ?? 1);
+  const posX = Number(c.posX || 0);
+  const posY = Number(c.posY || 0);
+  ctx.save();
+  ctx.globalAlpha = opacity;
+  if (brightness || contrast !== 1 || saturation !== 1 || hue) {
+    ctx.filter = `brightness(${Math.max(0, 1 + brightness)}) contrast(${contrast}) saturate(${saturation}) hue-rotate(${hue}deg)`;
+  }
+  if (scale !== 1 || posX || posY) {
+    ctx.translate(W / 2 + posX * W, H / 2 + posY * H);
+    ctx.scale(scale, scale);
+    ctx.translate(-W / 2, -H / 2);
+  }
+  // drawCover fills W×H; the transform above moves/scales that result.
+  const draw = (window as any).__oasisDrawCover;
+  if (draw) draw(ctx, media, W, H, asset, c.fit);
+  else drawCoverFallback(ctx, media, W, H);
+  ctx.restore();
+};
+
+const drawCoverFallback = (ctx: CanvasRenderingContext2D, media: any, W: number, H: number) => {
+  const mw = media.videoWidth || media.naturalWidth || W;
+  const mh = media.videoHeight || media.naturalHeight || H;
+  const r = Math.max(W / mw, H / mh);
+  const w = mw * r;
+  const h = mh * r;
+  ctx.drawImage(media, (W - w) / 2, (H - h) / 2, w, h);
+};
+
 export default function VideoStudio() {
   const { projectId, assets, toast, consumeHandoff, refreshAssets, assetsRev, sendAsset } = useApp();
   const [timelines, setTimelines] = useState<any[]>([]);
@@ -127,6 +170,8 @@ export default function VideoStudio() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data, assets, assetsRev]);
 
+  (window as any).__oasisDrawCover = drawCover;
+
   const draw = (t: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -150,9 +195,9 @@ export default function VideoStudio() {
             if (Math.abs(media.currentTime - desired) > 0.34) media.currentTime = Math.max(0, desired);
             if (playing && media.paused) media.play().catch(() => {});
             if (!playing && !media.paused) media.pause();
-            if (media.readyState >= 2) drawCover(ctx, media, W, H, asset, c.fit);
+            if (media.readyState >= 2) paintClip(ctx, media, W, H, asset, c);
           } else if (media instanceof HTMLImageElement && media.complete) {
-            drawCover(ctx, media, W, H, asset, c.fit);
+            paintClip(ctx, media, W, H, asset, c);
           }
         } catch {
           /* frame not ready */
@@ -773,7 +818,79 @@ export default function VideoStudio() {
 
           {clip.clip.assetId ? (
             <>
-              <div className="tiny muted-2 mt-12 mb-8">SEND CLIP TO</div>
+              <div className="tiny muted-2 mt-16 mb-8">COLOUR</div>
+          {[
+            { key: 'brightness', label: 'Exposure', min: -0.5, max: 0.5, step: 0.01, fmt: (v: number) => v.toFixed(2) },
+            { key: 'contrast', label: 'Contrast', min: 0.5, max: 2, step: 0.01, fmt: (v: number) => v.toFixed(2) },
+            { key: 'saturation', label: 'Saturation', min: 0, max: 2, step: 0.01, fmt: (v: number) => v.toFixed(2) },
+            { key: 'hue', label: 'Hue', min: -180, max: 180, step: 1, fmt: (v: number) => v.toFixed(0) + '°' },
+          ].map((f) => (
+            <Field key={f.key} label={f.label}>
+              <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+                <input
+                  type="range"
+                  aria-label={f.label}
+                  min={f.min}
+                  max={f.max}
+                  step={f.step}
+                  value={Number((clip.clip as any)[f.key] ?? (f.key === 'brightness' || f.key === 'hue' ? 0 : 1))}
+                  onChange={(e) => patchClip(clip.track.id, clip.clip.id, { [f.key]: Number(e.target.value) } as any)}
+                  style={{ flex: 1 }}
+                />
+                <span className="tiny muted-2" style={{ width: 44, textAlign: 'right' }}>
+                  {f.fmt(Number((clip.clip as any)[f.key] ?? (f.key === 'brightness' || f.key === 'hue' ? 0 : 1)))}
+                </span>
+              </div>
+            </Field>
+          ))}
+          <Btn size="sm" variant="ghost" onClick={() => patchClip(clip.track.id, clip.clip.id, { brightness: 0, contrast: 1, saturation: 1, hue: 0 } as any)}>
+            Reset colour
+          </Btn>
+
+          <div className="tiny muted-2 mt-16 mb-8">TRANSFORM</div>
+          {[
+            { key: 'opacity', label: 'Opacity', min: 0, max: 1, step: 0.01, fmt: (v: number) => Math.round(v * 100) + '%' },
+            { key: 'scale', label: 'Scale', min: 0.1, max: 3, step: 0.01, fmt: (v: number) => Math.round(v * 100) + '%' },
+            { key: 'posX', label: 'Position X', min: -1, max: 1, step: 0.01, fmt: (v: number) => Math.round(v * 100) + '%' },
+            { key: 'posY', label: 'Position Y', min: -1, max: 1, step: 0.01, fmt: (v: number) => Math.round(v * 100) + '%' },
+          ].map((f) => (
+            <Field key={f.key} label={f.label}>
+              <div className="row" style={{ gap: 8, alignItems: 'center' }}>
+                <input
+                  type="range"
+                  aria-label={f.label}
+                  min={f.min}
+                  max={f.max}
+                  step={f.step}
+                  value={Number((clip.clip as any)[f.key] ?? (f.key === 'opacity' || f.key === 'scale' ? 1 : 0))}
+                  onChange={(e) => patchClip(clip.track.id, clip.clip.id, { [f.key]: Number(e.target.value) } as any)}
+                  style={{ flex: 1 }}
+                />
+                <span className="tiny muted-2" style={{ width: 44, textAlign: 'right' }}>
+                  {f.fmt(Number((clip.clip as any)[f.key] ?? (f.key === 'opacity' || f.key === 'scale' ? 1 : 0)))}
+                </span>
+              </div>
+            </Field>
+          ))}
+          <Btn size="sm" variant="ghost" onClick={() => patchClip(clip.track.id, clip.clip.id, { opacity: 1, scale: 1, posX: 0, posY: 0 } as any)}>
+            Reset transform
+          </Btn>
+
+          <div className="tiny muted-2 mt-16 mb-8">AUDIO</div>
+          <Field label="Fade in / out (s)">
+            <input
+              type="range"
+              aria-label="Audio fade"
+              min={0}
+              max={5}
+              step={0.1}
+              value={Number((clip.clip as any).audioFade ?? 0)}
+              onChange={(e) => patchClip(clip.track.id, clip.clip.id, { audioFade: Number(e.target.value) } as any)}
+              style={{ width: '100%' }}
+            />
+          </Field>
+
+          <div className="tiny muted-2 mt-12 mb-8">SEND CLIP TO</div>
               <div className="row wrap">
                 <Btn size="sm" variant="ghost" onClick={() => sendAsset(clip.clip.assetId!, 'effectscraft', 'video-studio')}>
                   EffectsCraft

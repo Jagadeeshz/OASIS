@@ -408,6 +408,7 @@ app.whenReady().then(async () => {
     buildMenu();
     createWindow();
   } catch (err) {
+    console.error('[oasis] startup failed:', err && (err.stack || err.message || err));
     dialog.showErrorBox('OASIS failed to start', `${err.stack || err.message}`);
     app.quit();
   }

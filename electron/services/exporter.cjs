@@ -83,11 +83,30 @@ function buildRender(timeline, assets, { tmpDir }) {
     const start = Number(clip.start) || 0;
     const dur = Number(clip.duration) || 1;
     const fades = clip.transition === 'fade' ? `,fade=t=in:st=0:d=0.25,fade=t=out:st=${Math.max(0, dur - 0.25)}:d=0.25` : '';
+    const tScale = Number(clip.scale ?? 1);
+    const tOpacity = Number(clip.opacity ?? 1);
+    const brightness = Number(clip.brightness || 0);
+    const contrast = Number(clip.contrast ?? 1);
+    const saturation = Number(clip.saturation ?? 1);
+    const hue = Number(clip.hue || 0);
+    const colour =
+      brightness || contrast !== 1 || saturation !== 1 || hue
+        ? `,eq=brightness=${brightness}:contrast=${contrast}:saturation=${saturation}` +
+          (hue ? `,hue=h=${hue}` : '')
+        : '';
+    const transform = tScale !== 1 ? `,scale=iw*${tScale}:ih*${tScale}` : '';
+    const alpha = tOpacity < 1 ? `,format=rgba,colorchannelmixer=aa=${tOpacity}` : '';
+    const posX = Number(clip.posX || 0);
+    const posY = Number(clip.posY || 0);
+    const overlayXY =
+      posX || posY
+        ? `x=(W-w)/2+${posX}*W:y=(H-h)/2+${posY}*H`
+        : 'x=0:y=0';
     filters.push(
-      `[${i}:v]fps=${fps},${scale},setsar=1,setpts=PTS-STARTPTS+${start}/TB${fades}[vc${vCount}]`,
+      `[${i}:v]fps=${fps},${scale}${transform}${colour}${alpha},setsar=1,setpts=PTS-STARTPTS+${start}/TB${fades}[vc${vCount}]`,
     );
     filters.push(
-      `${lastVideo}[vc${vCount}]overlay=0:0:eof_action=pass:enable='between(t,${start},${start + dur})'[v${vCount}]`,
+      `${lastVideo}[vc${vCount}]overlay=${overlayXY}:eof_action=pass:enable='between(t,${start},${start + dur})'[v${vCount}]`,
     );
     lastVideo = `[v${vCount}]`;
     vCount++;
@@ -126,7 +145,12 @@ function buildRender(timeline, assets, { tmpDir }) {
     const vol = Number(clip.volume ?? 1);
     const delayMs = Math.round((Number(clip.start) || 0) * 1000);
     const label = `[a${aCount}]`;
-    filters.push(`[${i}:a]atrim=0:${Number(clip.duration) || 1},asetpts=PTS-STARTPTS,volume=${vol},adelay=${delayMs}:all=1${label}`);
+    const fade = Number(clip.audioFade || 0);
+    const afade =
+      fade > 0
+        ? `,afade=t=in:st=0:d=${Math.min(fade, (Number(clip.duration) || 1) / 2)},afade=t=out:st=${Math.max(0, (Number(clip.duration) || 1) - fade)}:d=${Math.min(fade, (Number(clip.duration) || 1) / 2)}`
+        : '';
+    filters.push(`[${i}:a]atrim=0:${Number(clip.duration) || 1},asetpts=PTS-STARTPTS,volume=${vol}${afade},adelay=${delayMs}:all=1${label}`);
     audioChains.push(label);
     aCount++;
   }

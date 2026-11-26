@@ -362,6 +362,16 @@ class JobService {
       else if (p.strength === 'strong') vf = 'hqdn3d=8:6:12:12';
       else if (p.strength === 'medium') vf = 'hqdn3d=4:3:6:6';
       else vf = `eq=contrast=1.06:saturation=1.05,unsharp=5:5:${Number(p.amount || 1)}:5:5:0`;
+    } else if (job.task_type === 'image.filter') {
+      const parts = [
+        `eq=brightness=${Number(p.brightness || 0)}:contrast=${Number(p.contrast ?? 1)}:saturation=${Number(p.saturation ?? 1)}`,
+      ];
+      if (Number(p.hue)) parts.push(`hue=h=${Number(p.hue)}`);
+      if (Number(p.blur) > 0) parts.push(`gblur=sigma=${Number(p.blur)}`);
+      if (Number(p.sharpen) > 0) parts.push(`unsharp=5:5:${Number(p.sharpen)}:5:5:0`);
+      if (p.vignette) parts.push('vignette=PI/5');
+      if (Number(p.grain) > 0) parts.push(`noise=alls=${Number(p.grain)}:allf=t`);
+      vf = parts.join(',');
     } else if (job.task_type === 'video.enhance') {
       const h = Number(p.height || 1080);
       vf = `scale=-2:${h}:flags=lanczos,unsharp=5:5:0.8:3:3:0.4`;

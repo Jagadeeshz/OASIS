@@ -8,6 +8,7 @@ const OPS = [
   { id: 'local/upscale-2x', media: 'image', label: 'Upscale 2×', blurb: 'Lanczos upscale on this machine — no provider call.' },
   { id: 'local/enhance', media: 'image', label: 'Enhance', blurb: 'Local contrast + unsharp pass.' },
   { id: 'local/denoise', media: 'image', label: 'Denoise', blurb: 'Local hqdn3d denoise.' },
+  { id: 'local/filter', media: 'image', label: 'Colour & filter lab', blurb: 'Exposure, contrast, saturation, hue, blur, sharpen, vignette, grain — all local ffmpeg.' },
   { id: 'fal-ai/imageutils/rembg', media: 'image', label: 'Remove background', blurb: 'fal.ai rembg (live) or a labelled mock if no key.' },
   { id: 'local/video-enhance', media: 'video', label: 'Video enhance', blurb: 'Scale + sharpen a clip locally with ffmpeg.' },
 ];
