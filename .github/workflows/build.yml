@@ -1,0 +1,67 @@
+name: build
+
+on:
+  push:
+    branches: [feat/oasis-desktop, main]
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm }
+      - run: npm ci
+      - run: npm test
+      - run: npx tsc -p tsconfig.json --noEmit
+      - run: npm run package:win
+      - uses: actions/upload-artifact@v4
+        with:
+          name: oasis-windows-x64
+          path: release/*.exe
+
+  macos-arm64:
+    runs-on: macos-14
+    env:
+      CSC_LINK: ${{ secrets.MAC_CERT_P12 }}
+      CSC_KEY_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm }
+      - run: npm ci
+      - run: npm test
+      - run: npm run package:mac -- --arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: oasis-macos-arm64
+          path: |
+            release/*.dmg
+            release/*.zip
+
+  macos-x64:
+    runs-on: macos-13
+    env:
+      CSC_LINK: ${{ secrets.MAC_CERT_P12 }}
+      CSC_KEY_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 24, cache: npm }
+      - run: npm ci
+      - run: npm test
+      - run: npm run package:mac -- --x64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: oasis-macos-x64
+          path: |
+            release/*.dmg
+            release/*.zip

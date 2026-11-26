@@ -5,8 +5,12 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { spawnSync } = require('node:child_process');
 
-const FFMPEG = process.env.OASIS_FFMPEG || 'ffmpeg';
-const FFPROBE = process.env.OASIS_FFPROBE || 'ffprobe';
+// macOS apps launched from Finder do not inherit the shell PATH, so Homebrew's
+// ffmpeg is invisible even when installed. Probe the usual locations first.
+const _fs = require('node:fs');
+const firstExisting = (list) => list.find((p) => { try { return _fs.existsSync(p); } catch { return false; } }) || null;
+const FFMPEG = process.env.OASIS_FFMPEG || (process.platform === 'darwin' ? firstExisting(['/opt/homebrew/bin/ffmpeg', '/usr/local/bin/ffmpeg', '/usr/bin/ffmpeg']) || 'ffmpeg' : 'ffmpeg');
+const FFPROBE = process.env.OASIS_FFPROBE || (process.platform === 'darwin' ? firstExisting(['/opt/homebrew/bin/ffprobe', '/usr/local/bin/ffprobe', '/usr/bin/ffprobe']) || 'ffprobe' : 'ffprobe');
 let _ffmpegOk = null;
 
 function ffmpegAvailable() {
