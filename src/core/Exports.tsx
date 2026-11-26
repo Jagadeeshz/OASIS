@@ -7,6 +7,9 @@ export default function Exports() {
   const { projectId, exportsRev, toast, setNav } = useApp();
   const [list, setList] = useState<ExportRecord[]>([]);
   const [selected, setSelected] = useState<ExportRecord | null>(null);
+  const [q, setQ] = useState('');
+  const [status, setStatus] = useState('all');
+  const [deleting, setDeleting] = useState<ExportRecord | null>(null);
 
   const load = () => {
     if (!projectId) return;
@@ -43,6 +46,27 @@ export default function Exports() {
         <Btn onClick={() => setNav('video')}>Video Studio</Btn>
       </div>
 
+      <div className="panel pad mb-12" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <input
+          className="input"
+          style={{ maxWidth: 280 }}
+          placeholder="Search by id, timeline or path…"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          aria-label="Search exports"
+        />
+        <select className="select" style={{ width: 150 }} value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filter exports by status">
+          <option value="all">All statuses</option>
+          <option value="succeeded">Succeeded</option>
+          <option value="running">Running</option>
+          <option value="failed">Failed</option>
+          <option value="cancelled">Cancelled</option>
+        </select>
+        <Btn size="sm" variant="ghost" onClick={() => { setQ(''); setStatus('all'); }}>Reset</Btn>
+        <div className="spacer" style={{ flex: 1 }} />
+        <span className="tiny muted-2">{list.filter((e) => (status === 'all' || e.status === status) && (!q.trim() || (e.id + ' ' + e.timeline_id + ' ' + (e.output_path || '')).toLowerCase().includes(q.trim().toLowerCase()))).length} of {list.length}</span>
+      </div>
+
       {list.length === 0 ? (
         <Empty title="No exports yet" hint="Build a timeline in Video Studio and press Export." action={<Btn onClick={() => setNav('video')}>Open Video Studio</Btn>} />
       ) : (
@@ -60,7 +84,9 @@ export default function Exports() {
               </tr>
             </thead>
             <tbody>
-              {list.map((e) => (
+              {list
+                .filter((e) => (status === 'all' || e.status === status) && (!q.trim() || (e.id + ' ' + e.timeline_id + ' ' + (e.output_path || '')).toLowerCase().includes(q.trim().toLowerCase())))
+                .map((e) => (
                 <tr key={e.id}>
                   <td>
                     <div className="small mono">{e.id.slice(0, 16)}…</div>
@@ -101,6 +127,26 @@ export default function Exports() {
                           Show file
                         </Btn>
                       ) : null}
+                      {e.status === 'failed' || e.status === 'cancelled' ? (
+                        <Btn
+                          size="sm"
+                          variant="ghost"
+                          onClick={async () => {
+                            try {
+                              await api.exports.create({ projectId, timelineId: e.timeline_id, name: 'retry' });
+                              toast('Export queued again', 'success');
+                              load();
+                            } catch (err: any) {
+                              toast(err.message, 'error');
+                            }
+                          }}
+                        >
+                          Retry
+                        </Btn>
+                      ) : null}
+                      <Btn size="sm" variant="subtle" title="Remove record (file is kept)" aria-label="Remove export record" onClick={() => setDeleting(e)}>
+                        ✕
+                      </Btn>
                     </div>
                   </td>
                 </tr>
@@ -109,6 +155,35 @@ export default function Exports() {
           </table>
         </div>
       )}
+
+      <Modal
+        open={!!deleting}
+        title="Remove export record?"
+        width={440}
+        onClose={() => setDeleting(null)}
+        footer={
+          <>
+            <Btn variant="ghost" onClick={() => setDeleting(null)}>Cancel</Btn>
+            <Btn
+              variant="danger"
+              onClick={async () => {
+                try {
+                  await api.exports.remove(deleting!.id, { purge: false });
+                  toast('Export record removed — file kept on disk', 'success');
+                  setDeleting(null);
+                  load();
+                } catch (err: any) {
+                  toast(err.message, 'error');
+                }
+              }}
+            >
+              Remove record
+            </Btn>
+          </>
+        }
+      >
+        <div className="small muted">The row is removed from the export manager. The rendered file and manifest stay on disk.</div>
+      </Modal>
 
       <Modal open={!!selected} title="Export manifest" onClose={() => setSelected(null)} width={820} footer={<Btn variant="ghost" onClick={() => setSelected(null)}>Close</Btn>}>
         {selected ? (

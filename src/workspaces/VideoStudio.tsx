@@ -300,6 +300,34 @@ export default function VideoStudio() {
     setDirty(true);
   };
 
+  const addTrack = (type: 'video' | 'audio' | 'text') => {
+    setData((d) => {
+      const count = d.tracks.filter((t) => t.type === type).length + 1;
+      const id = type[0] + '_' + Math.random().toString(36).slice(2, 6);
+      const name = type === 'video' ? 'Video ' + count : type === 'audio' ? 'Audio ' + count : 'Titles ' + count;
+      return { ...d, tracks: [...d.tracks, { id, type, name, clips: [] }] };
+    });
+    setDirty(true);
+    toast('Track added', 'success');
+  };
+
+  const duplicateClip = () => {
+    if (!selected || !clip) return;
+    const copy = { ...clip.clip, id: newId(), start: clip.clip.start + clip.clip.duration };
+    setData((d) => ({
+      ...d,
+      tracks: d.tracks.map((t) => (t.id === selected.trackId ? { ...t, clips: [...t.clips, copy] } : t)),
+    }));
+    setSelected({ trackId: selected.trackId, clipId: copy.id });
+    setDirty(true);
+    toast('Clip duplicated', 'success');
+  };
+
+  const patchTrack = (trackId: string, patch: Record<string, any>) => {
+    setData((d) => ({ ...d, tracks: d.tracks.map((t) => (t.id === trackId ? { ...t, ...patch } : t)) }));
+    setDirty(true);
+  };
+
   const removeSelected = () => {
     if (!selected) return;
     setData((d) => ({
@@ -344,6 +372,10 @@ export default function VideoStudio() {
 
   const startDrag = (e: React.PointerEvent, track: TimelineTrack, c: any, mode: 'move' | 'trimL' | 'trimR') => {
     e.stopPropagation();
+    if ((track as any).locked) {
+      toast('Track is locked — unlock it to edit', 'warn');
+      return;
+    }
     setSelected({ trackId: track.id, clipId: c.id });
     const startX = e.clientX;
     const orig = { start: c.start, duration: c.duration, inPoint: c.inPoint };
@@ -595,11 +627,20 @@ export default function VideoStudio() {
 
       <div className="timeline-panel panel">
         <div className="timeline-toolbar">
-          <Btn size="sm" variant="ghost" onClick={addText}>
+          <Btn size="sm" variant="ghost" onClick={addText} title="Add a title at the playhead">
             + Text
+          </Btn>
+          <Btn size="sm" variant="ghost" onClick={() => addTrack('video')} title="Add a video track">
+            + Video
+          </Btn>
+          <Btn size="sm" variant="ghost" onClick={() => addTrack('audio')} title="Add an audio track">
+            + Audio
           </Btn>
           <Btn size="sm" variant="ghost" onClick={splitSelected} disabled={!clip}>
             Split
+          </Btn>
+          <Btn size="sm" variant="ghost" onClick={duplicateClip} disabled={!clip} title="Duplicate the selected clip">
+            Duplicate
           </Btn>
           <Btn size="sm" variant="ghost" onClick={removeSelected} disabled={!selected}>
             Delete clip
@@ -622,6 +663,24 @@ export default function VideoStudio() {
                 <div className="track-label">
                   <span>{trackLabel(track)} {track.name}</span>
                   <span className="tiny muted-2">{track.clips.length} clips</span>
+                  <div className="row" style={{ gap: 4, marginTop: 2 }}>
+                    <button
+                      className="track-btn"
+                      title={track.muted ? 'Unmute track' : 'Mute track (excluded from preview and export)'}
+                      aria-label={track.muted ? 'Unmute track' : 'Mute track'}
+                      onClick={(e) => { e.stopPropagation(); patchTrack(track.id, { muted: !(track as any).muted }); }}
+                    >
+                      {(track as any).muted ? '🔇' : '🔊'}
+                    </button>
+                    <button
+                      className="track-btn"
+                      title={track.locked ? 'Unlock track' : 'Lock track (prevents edits)'}
+                      aria-label={track.locked ? 'Unlock track' : 'Lock track'}
+                      onClick={(e) => { e.stopPropagation(); patchTrack(track.id, { locked: !(track as any).locked }); }}
+                    >
+                      {(track as any).locked ? '🔒' : '🔓'}
+                    </button>
+                  </div>
                 </div>
                 <div
                   className="track-lane grid-bg"

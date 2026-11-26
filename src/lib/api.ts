@@ -143,7 +143,7 @@ export type TimelineClip = {
   box?: boolean;
 };
 
-export type TimelineTrack = { id: string; type: 'video' | 'audio' | 'text'; name: string; clips: TimelineClip[] };
+export type TimelineTrack = { id: string; type: 'video' | 'audio' | 'text'; name: string; clips: TimelineClip[]; muted?: boolean; locked?: boolean };
 export type TimelineData = { version: number; width: number; height: number; fps: number; tracks: TimelineTrack[] };
 
 export type Timeline = {

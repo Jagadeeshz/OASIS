@@ -66,6 +66,7 @@ const api = {
     save: (input) => call('workflows:save', input),
     remove: (id) => call('workflows:remove', id),
     run: (input) => call('workflows:run', input),
+    start: (input) => call('workflows:start', input),
     cancel: (runId) => call('workflows:cancel', runId),
     runs: (id, limit) => call('workflows:runs', id, limit),
   },
@@ -81,6 +82,7 @@ const api = {
     get: (id) => call('exports:get', id),
     create: (input) => call('exports:create', input),
     cancel: (id) => call('exports:cancel', id),
+    remove: (id, opts) => call('exports:remove', id, opts),
     reveal: (id) => call('exports:reveal', id),
   },
   settings: {

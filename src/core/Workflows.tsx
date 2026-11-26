@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { api, fmtDate } from '../lib/api';
 import { useApp } from '../lib/store';
-import { Badge, Btn, Confirm, Empty, MockBadge, StatusBadge } from '../components/ui';
+import { Badge, Btn, Confirm, Empty, Field, Modal, StatusBadge } from '../components/ui';
 
 export default function WorkflowsPage() {
   const { projectId, workflowsRev, toast, setNav, sendAsset } = useApp();
@@ -9,6 +9,9 @@ export default function WorkflowsPage() {
   const [runs, setRuns] = useState<Record<string, any[]>>({});
   const [deleting, setDeleting] = useState<any>(null);
   const [running, setRunning] = useState<string | null>(null);
+  const [q, setQ] = useState('');
+  const [renameTarget, setRenameTarget] = useState<any>(null);
+  const [renameName, setRenameName] = useState('');
 
   const load = async () => {
     if (!projectId) return;
@@ -34,9 +37,22 @@ export default function WorkflowsPage() {
           <p>Saved AI Canvas graphs. Runs execute through the shared job service, so every output lands in Asset Studio with full provenance.</p>
         </div>
         <div className="spacer" />
+        <Btn variant="ghost" onClick={load}>Refresh</Btn>
         <Btn variant="primary" onClick={() => openCanvas()}>
           New workflow
         </Btn>
+      </div>
+
+      <div className="panel pad mb-12" style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+        <input
+          className="input"
+          style={{ maxWidth: 320 }}
+          placeholder="Search workflows…"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          aria-label="Search workflows"
+        />
+        <span className="tiny muted-2">{list.filter((w) => w.name.toLowerCase().includes(q.trim().toLowerCase())).length} of {list.length}</span>
       </div>
 
       {list.length === 0 ? (
@@ -47,7 +63,9 @@ export default function WorkflowsPage() {
         />
       ) : (
         <div className="stack">
-          {list.map((wf) => (
+          {list
+            .filter((wf) => wf.name.toLowerCase().includes(q.trim().toLowerCase()))
+            .map((wf) => (
             <div key={wf.id} className="panel">
               <div className="panel-head">
                 <div>
@@ -99,6 +117,29 @@ export default function WorkflowsPage() {
                   >
                     History
                   </Btn>
+                  <Btn
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => { setRenameTarget(wf); setRenameName(wf.name); }}
+                  >
+                    Rename
+                  </Btn>
+                  <Btn
+                    size="sm"
+                    variant="ghost"
+                    onClick={async () => {
+                      try {
+                        const full = await api.workflows.get(wf.id);
+                        await api.workflows.save({ projectId, name: wf.name + ' copy', description: wf.description || '', graph: full.graph });
+                        toast('Workflow duplicated', 'success');
+                        load().catch(() => {});
+                      } catch (err: any) {
+                        toast(err.message, 'error');
+                      }
+                    }}
+                  >
+                    Duplicate
+                  </Btn>
                   <Btn size="sm" variant="danger" onClick={() => setDeleting(wf)}>
                     Delete
                   </Btn>
@@ -144,6 +185,38 @@ export default function WorkflowsPage() {
           ))}
         </div>
       )}
+
+      <Modal
+        open={!!renameTarget}
+        title="Rename workflow"
+        width={440}
+        onClose={() => setRenameTarget(null)}
+        footer={
+          <>
+            <Btn variant="ghost" onClick={() => setRenameTarget(null)}>Cancel</Btn>
+            <Btn
+              variant="primary"
+              disabled={!renameName.trim()}
+              onClick={async () => {
+                try {
+                  await api.workflows.save({ id: renameTarget.id, projectId, name: renameName.trim(), graph: renameTarget.graph });
+                  toast('Workflow renamed', 'success');
+                  setRenameTarget(null);
+                  load().catch(() => {});
+                } catch (err: any) {
+                  toast(err.message, 'error');
+                }
+              }}
+            >
+              Save
+            </Btn>
+          </>
+        }
+      >
+        <Field label="Workflow name">
+          <input className="input" autoFocus value={renameName} onChange={(e) => setRenameName(e.target.value)} />
+        </Field>
+      </Modal>
 
       <Confirm
         open={!!deleting}

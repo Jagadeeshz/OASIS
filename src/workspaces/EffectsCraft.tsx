@@ -128,6 +128,17 @@ export default function EffectsCraft() {
             <Btn variant="primary" className="w-full mt-12" disabled={busy || !canRun} onClick={run}>
               {busy ? <Spinner /> : null} Run operation
             </Btn>
+            <Btn
+              variant="ghost"
+              className="w-full mt-8"
+              onClick={() => {
+                setValues({});
+                setForceMock(false);
+                toast('Effect settings reset', 'success');
+              }}
+            >
+              Reset settings
+            </Btn>
             {!canRun && model?.provider === 'local' ? <div className="tiny muted-2 mt-8">Install ffmpeg and restart OASIS to enable local processing.</div> : null}
           </div>
 
@@ -223,6 +234,16 @@ export default function EffectsCraft() {
             <div className="row">
               <Btn size="sm" onClick={() => sendAsset(result.id, 'assets', 'effectscraft')}>
                 Asset Studio
+              </Btn>
+              <Btn
+                size="sm"
+                variant="ghost"
+                onClick={async () => {
+                  const p = await api.assets.saveCopy(result.id);
+                  if (p) toast('Saved to ' + p, 'success');
+                }}
+              >
+                Download
               </Btn>
               <Btn size="sm" variant="ghost" onClick={() => sendAsset(result.id, 'video', 'effectscraft')}>
                 Video Studio

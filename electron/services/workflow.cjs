@@ -286,7 +286,7 @@ class WorkflowService {
    * Execute a workflow. If `graph` is supplied it is validated and used directly
    * (unsaved canvas), otherwise the stored workflow graph is used.
    */
-  async run({ workflowId, projectId, graph, forceMock = false } = {}) {
+  async run({ workflowId, projectId, graph, forceMock = false, onStart = null } = {}) {
     let wf = workflowId ? this.get(workflowId) : null;
     const runGraph = graph || wf?.graph;
     if (!runGraph) throw new Error('No workflow graph to run');
@@ -315,6 +315,7 @@ class WorkflowService {
       this.db.tx(() => this.db.run('UPDATE workflows SET last_run_at = ? WHERE id = ?', [nowIso(), workflowId]));
     }
     this.onEvent({ type: 'run:update', runId, states: nodeStates, status: 'running' });
+    if (typeof onStart === 'function') onStart(runId);
 
     const incoming = new Map(runGraph.nodes.map((n) => [n.id, []]));
     for (const e of runGraph.edges || []) incoming.get(e.target)?.push(e);
@@ -327,6 +328,7 @@ class WorkflowService {
       this.db.run('UPDATE workflow_runs SET node_states = ? WHERE id = ?', [JSON.stringify(nodeStates), runId]);
       this.db.schedulePersist();
       this.onEvent({ type: 'run:update', runId, states: nodeStates, status: 'running' });
+    if (typeof onStart === 'function') onStart(runId);
     };
 
     try {

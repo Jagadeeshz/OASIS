@@ -4,11 +4,24 @@ import { useApp } from '../lib/store';
 import { Badge, Btn, Empty, MockBadge, Progress, StatusBadge, Tabs } from '../components/ui';
 
 export default function Jobs() {
-  const { projectId, jobs, toast, setNav, sendAsset } = useApp();
+  const { projectId, jobs, toast, setNav, sendAsset, refreshJobs } = useApp();
   const [tab, setTab] = useState<'all' | 'active' | 'succeeded' | 'failed' | 'mock'>('all');
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [q, setQ] = useState('');
+  const [provider, setProvider] = useState('');
+  const [task, setTask] = useState('');
+
+  const providers = [...new Set(jobs.map((j) => j.provider))];
+  const taskTypes = [...new Set(jobs.map((j) => j.task_type))];
 
   const filtered = jobs.filter((j) => {
+    const needle = q.trim().toLowerCase();
+    if (needle) {
+      const hay = [j.model, j.modelLabel, j.id, j.error, j.params?.prompt, j.workspace].filter(Boolean).join(' ').toLowerCase();
+      if (!hay.includes(needle)) return false;
+    }
+    if (provider && j.provider !== provider) return false;
+    if (task && j.task_type !== task) return false;
     if (tab === 'all') return true;
     if (tab === 'active') return ['queued', 'submitted', 'running'].includes(j.status);
     if (tab === 'mock') return j.status === 'mock' || j.isMock;
@@ -34,6 +47,34 @@ export default function Jobs() {
             { id: 'failed', label: 'Failed' },
           ]}
         />
+      </div>
+
+      <div className="panel pad mb-12" style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <input
+          className="input"
+          style={{ maxWidth: 280 }}
+          placeholder="Search model, job id, prompt, error…"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          aria-label="Search jobs"
+        />
+        <select className="select" style={{ width: 150 }} value={provider} onChange={(e) => setProvider(e.target.value)} aria-label="Filter by provider">
+          <option value="">All providers</option>
+          {providers.map((p) => (
+            <option key={p} value={p}>{p}</option>
+          ))}
+        </select>
+        <select className="select" style={{ width: 190 }} value={task} onChange={(e) => setTask(e.target.value)} aria-label="Filter by task">
+          <option value="">All tasks</option>
+          {taskTypes.map((t) => (
+            <option key={t} value={t}>{t}</option>
+          ))}
+        </select>
+        <Btn size="sm" variant="ghost" onClick={() => { setQ(''); setProvider(''); setTask(''); setTab('all'); }}>Reset</Btn>
+        <div className="spacer" style={{ flex: 1 }} />
+        <span className="tiny muted-2">{filtered.length} of {jobs.length}</span>
+        <Btn size="sm" variant="ghost" onClick={async () => { await refreshJobs(); toast('Jobs refreshed', 'success'); }}>Refresh</Btn>
+        <Btn size="sm" variant="subtle" onClick={() => setNav('logs')}>View logs</Btn>
       </div>
 
       <div className="panel">

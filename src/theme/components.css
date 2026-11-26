@@ -620,6 +620,8 @@ table.table tbody tr:hover td { background: var(--bindu-surface-hover); }
   display: flex; flex-direction: column; gap: 3px;
   position: sticky; left: 0; z-index: 2;
 }
+.track-btn { background: transparent; border: 1px solid var(--bindu-border-soft); border-radius: 4px; color: var(--bindu-text-secondary); font-size: 9px; line-height: 1; padding: 2px 3px; cursor: pointer; }
+.track-btn:hover { background: var(--bindu-surface-hover); border-color: var(--bindu-border); }
 .track-lane { position: relative; min-height: 52px; }
 .track-lane.grid-bg { background-image: linear-gradient(90deg, var(--bindu-border-soft) 1px, transparent 1px); }
 
@@ -677,6 +679,7 @@ table.table tbody tr:hover td { background: var(--bindu-surface-hover); }
 /* No selection → the inspector collapses and the canvas takes the space. */
 .canvas-wrap.no-inspector { grid-template-columns: 212px minmax(0, 1fr); }
 .canvas-wrap.no-inspector .canvas-side { display: none; }
+.toolbar-divider { width: 1px; height: 18px; background: var(--bindu-border); flex: none; }
 .canvas-hint {
   position: absolute; left: 12px; top: 58px; max-width: 430px;
   padding: 6px 10px;

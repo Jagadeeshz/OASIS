@@ -27,6 +27,8 @@ function normalize(data) {
     id: t.id || `track${i}`,
     type: ['video', 'audio', 'text'].includes(t.type) ? t.type : 'video',
     name: t.name || `Track ${i + 1}`,
+    muted: !!t.muted,
+    locked: !!t.locked,
     clips: (Array.isArray(t.clips) ? t.clips : []).map((c) => ({
       id: c.id || `clip_${crypto.randomUUID().slice(0, 8)}`,
       assetId: c.assetId || null,

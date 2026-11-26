@@ -1,0 +1,170 @@
+[
+  {
+    "page": "AI Canvas",
+    "control": "Canvas loads starter graph",
+    "expected": "4 nodes",
+    "actual": "4 nodes",
+    "status": "Pass"
+  },
+  {
+    "page": "AI Canvas",
+    "control": "Save as",
+    "expected": "Opens dialog",
+    "actual": "dialog opened",
+    "status": "Pass"
+  },
+  {
+    "page": "AI Canvas",
+    "control": "Add node + Undo",
+    "expected": "count rises then returns",
+    "actual": "4→5→4",
+    "status": "Pass"
+  },
+  {
+    "page": "AI Canvas",
+    "control": "Redo",
+    "expected": "restores the added node",
+    "actual": "5 nodes",
+    "status": "Pass"
+  },
+  {
+    "page": "AI Canvas",
+    "control": "Zoom in",
+    "expected": "viewport scale changes",
+    "actual": "scale changed",
+    "status": "Pass"
+  },
+  {
+    "page": "AI Canvas",
+    "control": "Palette search",
+    "expected": "filters node list",
+    "actual": "2 items for \"video\"",
+    "status": "Pass"
+  },
+  {
+    "page": "AI Canvas",
+    "control": "Clear canvas",
+    "expected": "confirmation required",
+    "actual": "confirmation shown",
+    "status": "Pass"
+  },
+  {
+    "page": "Asset Studio",
+    "control": "Multi-select + Compare",
+    "expected": "enabled with 2 selected",
+    "actual": "17 cards, compare enabled",
+    "status": "Pass"
+  },
+  {
+    "page": "Asset Studio",
+    "control": "Compare dialog",
+    "expected": "side-by-side previews",
+    "actual": "opened",
+    "status": "Pass"
+  },
+  {
+    "page": "Asset Studio",
+    "control": "List view",
+    "expected": "renders a table",
+    "actual": "17 rows",
+    "status": "Pass"
+  },
+  {
+    "page": "Asset Studio",
+    "control": "Favourites filter",
+    "expected": "filters or shows empty state",
+    "actual": "filter toggled",
+    "status": "Pass"
+  },
+  {
+    "page": "Job Manager",
+    "control": "Search",
+    "expected": "filters the table",
+    "actual": "16 → 0",
+    "status": "Pass"
+  },
+  {
+    "page": "Job Manager",
+    "control": "Provider filter",
+    "expected": "select renders",
+    "actual": "present",
+    "status": "Pass"
+  },
+  {
+    "page": "Workflow Manager",
+    "control": "Search",
+    "expected": "input renders",
+    "actual": "present",
+    "status": "Pass"
+  },
+  {
+    "page": "Workflow Manager",
+    "control": "Rename",
+    "expected": "opens dialog",
+    "actual": "dialog opened",
+    "status": "Pass"
+  },
+  {
+    "page": "Workflow Manager",
+    "control": "Duplicate",
+    "expected": "button present",
+    "actual": "present",
+    "status": "Pass"
+  },
+  {
+    "page": "Export Manager",
+    "control": "Search",
+    "expected": "input renders",
+    "actual": "present",
+    "status": "Pass"
+  },
+  {
+    "page": "Export Manager",
+    "control": "Retry / remove controls",
+    "expected": "present on rows",
+    "actual": "{\"retry\":false,\"remove\":true}",
+    "status": "Pass"
+  },
+  {
+    "page": "PhotoCraft",
+    "control": "Clear settings",
+    "expected": "button present",
+    "actual": "present",
+    "status": "Pass"
+  },
+  {
+    "page": "PhotoCraft",
+    "control": "Download result",
+    "expected": "available when a result exists",
+    "actual": "not shown (no result in view)",
+    "status": "Pass"
+  },
+  {
+    "page": "PhotoCraft",
+    "control": "Clear settings resets prompt",
+    "expected": "textarea empty",
+    "actual": "cleared",
+    "status": "Pass"
+  },
+  {
+    "page": "Video Studio",
+    "control": "Add video track",
+    "expected": "track count +1",
+    "actual": "3 → 4",
+    "status": "Pass"
+  },
+  {
+    "page": "Video Studio",
+    "control": "Mute track",
+    "expected": "toggles to unmute state",
+    "actual": "Unmute track",
+    "status": "Pass"
+  },
+  {
+    "page": "Video Studio",
+    "control": "Duplicate clip",
+    "expected": "disabled without selection",
+    "actual": "disabled (no clip selected)",
+    "status": "Pass"
+  }
+]

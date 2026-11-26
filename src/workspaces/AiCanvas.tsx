@@ -144,7 +144,13 @@ function CanvasInner() {
   const [saved, setSaved] = useState<any[]>([]);
   const [validation, setValidation] = useState<string[]>([]);
   const wrapper = useRef<any>(null);
-  const { fitView } = useReactFlow();
+  const { fitView, zoomIn, zoomOut, setViewport } = useReactFlow();
+  const history = useRef<{ past: string[]; future: string[] }>({ past: [], future: [] });
+  const [selectedEdgeId, setSelectedEdgeId] = useState<string | null>(null);
+  const [paletteQuery, setPaletteQuery] = useState('');
+  const [saveAsOpen, setSaveAsOpen] = useState(false);
+  const [saveAsName, setSaveAsName] = useState('');
+  const [clearOpen, setClearOpen] = useState(false);
 
   const defs = NODE_DEFS || {};
 
@@ -216,8 +222,11 @@ function CanvasInner() {
         setNodeStates(evt.states || {});
         if (['succeeded', 'failed', 'cancelled'].includes(evt.status)) {
           setRunning(false);
-          if (evt.status === 'succeeded') toast(`Workflow finished — ${evt.resultAssetIds?.length || 0} asset(s) saved`, 'success');
-          else if (evt.status === 'failed') toast(evt.error || 'Workflow failed', 'error');
+          if (evt.status === 'succeeded') {
+            toast(`Workflow finished — ${evt.resultAssetIds?.length || 0} asset(s) saved`, 'success');
+            refreshAssets().catch(() => {});
+          } else if (evt.status === 'failed') toast(evt.error || 'Workflow failed', 'error');
+          else if (evt.status === 'cancelled') toast('Workflow stopped', 'warn');
         }
       }
     });
@@ -235,6 +244,7 @@ function CanvasInner() {
         toast(`Cannot connect ${from} to ${to}`, 'warn');
         return;
       }
+      pushHistory();
       setEdges((eds) => addEdge({ ...params }, eds));
     },
     [nodes, setEdges, toast],
@@ -261,9 +271,133 @@ function CanvasInner() {
     [nodes, edges],
   );
 
+  const snapshot = () => JSON.stringify({ nodes: nodes.map((n) => ({ id: n.id, position: n.position, data: n.data })), edges });
+
+  const pushHistory = useCallback(() => {
+    history.current.past.push(snapshot());
+    if (history.current.past.length > 40) history.current.past.shift();
+    history.current.future = [];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nodes, edges]);
+
+  const restore = (snap: string) => {
+    const parsed = JSON.parse(snap);
+    setNodes(parsed.nodes.map((n: any) => ({ ...n, type: 'oasis', selected: false })));
+    setEdges(parsed.edges);
+    setSelectedId(null);
+    setSelectedEdgeId(null);
+  };
+
+  const undo = () => {
+    const prev = history.current.past.pop();
+    if (!prev) return toast('Nothing to undo', 'warn');
+    history.current.future.push(snapshot());
+    restore(prev);
+  };
+
+  const redo = () => {
+    const next = history.current.future.pop();
+    if (!next) return toast('Nothing to redo', 'warn');
+    history.current.past.push(snapshot());
+    restore(next);
+  };
+
+  const duplicateNode = (id: string) => {
+    const src = nodes.find((n) => n.id === id);
+    if (!src) return;
+    pushHistory();
+    const copy = {
+      ...src,
+      id: `n_${Math.random().toString(36).slice(2, 7)}`,
+      position: { x: (src.position?.x || 0) + 32, y: (src.position?.y || 0) + 32 },
+      data: { ...src.data, config: JSON.parse(JSON.stringify(src.data.config || {})), status: { status: 'pending' } },
+      selected: false,
+    };
+    setNodes((nds) => [...nds, copy]);
+    setSelectedId(copy.id);
+  };
+
+  const deleteNode = (id: string) => {
+    pushHistory();
+    setNodes((nds) => nds.filter((n) => n.id !== id));
+    setEdges((eds) => eds.filter((e: any) => e.source !== id && e.target !== id));
+    setSelectedId(null);
+  };
+
+  const deleteEdge = (id: string) => {
+    pushHistory();
+    setEdges((eds) => eds.filter((e: any) => e.id !== id));
+    setSelectedEdgeId(null);
+  };
+
+  const saveAs = async () => {
+    const name = saveAsName.trim();
+    if (!name) return;
+    try {
+      const wf = await api.workflows.save({ projectId, name, graph: graphOf() });
+      setWorkflowId(wf.id);
+      setWorkflowName(wf.name);
+      setSaveAsOpen(false);
+      setSaveAsName('');
+      toast(`Saved as “${wf.name}”`, 'success');
+    } catch (err: any) {
+      toast(err.message, 'error');
+    }
+  };
+
+  const clearCanvas = () => {
+    pushHistory();
+    setNodes([]);
+    setEdges([]);
+    setSelectedId(null);
+    setSelectedEdgeId(null);
+    setWorkflowId(null);
+    setWorkflowName('Untitled workflow');
+    setNodeStates({});
+    setClearOpen(false);
+    toast('Canvas cleared', 'success');
+  };
+
+  // Canvas keyboard: undo/redo, duplicate, delete edge or node.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      const mod = e.ctrlKey || e.metaKey;
+      if (mod && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        e.shiftKey ? redo() : undo();
+        return;
+      }
+      if (mod && e.key.toLowerCase() === 'y') {
+        e.preventDefault();
+        redo();
+        return;
+      }
+      if (mod && e.key.toLowerCase() === 'd' && selectedId) {
+        e.preventDefault();
+        duplicateNode(selectedId);
+        return;
+      }
+      if (e.key === 'Delete' || e.key === 'Backspace') {
+        if (selectedEdgeId) {
+          e.preventDefault();
+          deleteEdge(selectedEdgeId);
+        } else if (selectedId) {
+          e.preventDefault();
+          deleteNode(selectedId);
+        }
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedId, selectedEdgeId, nodes, edges]);
+
   const addNode = (ntype: string) => {
     const def = defs[ntype];
     if (!def) return;
+    pushHistory();
     const id = `n_${Math.random().toString(36).slice(2, 7)}`;
     const config = JSON.parse(JSON.stringify(def.config || {}));
     if (ntype === 'prompt.text') config.text = '';
@@ -281,6 +415,7 @@ function CanvasInner() {
 
   const updateSelectedConfig = (patch: Record<string, any>) => {
     if (!selected) return;
+    pushHistory();
     setNodes((nds) => nds.map((n) => (n.id === selected.id ? { ...n, data: { ...n.data, config: { ...n.data.config, ...patch } } } : n)));
   };
 
@@ -303,22 +438,16 @@ function CanvasInner() {
   };
 
   const run = async () => {
+    if (!nodes.length) return toast('Add at least one node first', 'warn');
     setRunning(true);
     setNodeStates({});
     setValidation([]);
     try {
-      const res = await api.workflows.run({ projectId, graph: graphOf(), workflowId: workflowId || undefined });
+      // Returns as soon as the run row exists; progress arrives via run:update events,
+      // which is what makes Stop work while a run is in flight.
+      const res = await api.workflows.start({ projectId, graph: graphOf(), workflowId: workflowId || undefined });
       setRunId(res.runId);
-      setNodeStates(res.nodeStates || {});
-      if (res.status === 'succeeded') {
-        toast(`Workflow succeeded — ${res.resultAssetIds.length} asset(s)`, 'success');
-        setRunning(false);
-        await refreshAssets();
-      } else if (res.status !== 'running') {
-        toast(res.error || `Workflow ${res.status}`, 'error');
-        setRunning(false);
-        if (res.error?.includes('Invalid workflow')) setValidation([res.error]);
-      }
+      toast('Workflow started', 'info');
     } catch (err: any) {
       setValidation(err.validation || [err.message]);
       toast(err.message, 'error');
@@ -367,7 +496,20 @@ function CanvasInner() {
             Library
           </Btn>
         </div>
-        {Object.entries(defs).map(([key, def]: any) => (
+        <input
+          className="input mb-8"
+          style={{ height: 26 }}
+          placeholder="Search nodes…"
+          value={paletteQuery}
+          onChange={(e) => setPaletteQuery(e.target.value)}
+        />
+        {Object.entries(defs)
+          .filter(([key, def]: any) => {
+            const q = paletteQuery.trim().toLowerCase();
+            if (!q) return true;
+            return (def.label + " " + def.category + " " + key).toLowerCase().includes(q);
+          })
+          .map(([key, def]: any) => (
           <div key={key} className="palette-item" onClick={() => addNode(key)} title={def.description}>
             {def.label}
             <small>{def.category} · {def.outputs.map((o: any) => o.type).join('/') || 'sink'}</small>
@@ -385,8 +527,14 @@ function CanvasInner() {
           onConnect={onConnect}
           isValidConnection={isValidConnection}
           nodeTypes={nodeTypes}
-          onNodeClick={(_, node) => setSelectedId(node.id)}
-          onPaneClick={() => setSelectedId(null)}
+          onNodeClick={(_, node) => { setSelectedId(node.id); setSelectedEdgeId(null); }}
+          onEdgeClick={(_, edge) => {
+            setEdges((eds: any[]) => eds.map((e) => ({ ...e, selected: e.id === edge.id })));
+            setSelectedEdgeId(edge.id);
+            setSelectedId(null);
+          }}
+          onNodeDragStop={() => pushHistory()}
+          onPaneClick={() => { setSelectedId(null); setSelectedEdgeId(null); setEdges((eds: any[]) => eds.map((e) => ({ ...e, selected: false }))); }}
           fitView
           proOptions={{ hideAttribution: true }}
         >
@@ -394,17 +542,49 @@ function CanvasInner() {
           <MiniMap pannable zoomable style={{ width: 168, height: 104 }} />
         </ReactFlow>
         <div className="canvas-toolbar">
-          <input className="input" style={{ maxWidth: 260 }} value={workflowName} onChange={(e) => setWorkflowName(e.target.value)} />
-          <Btn size="sm" variant="ghost" onClick={() => save()} disabled={saving}>
+          <input className="input" style={{ maxWidth: 200 }} value={workflowName} onChange={(e) => setWorkflowName(e.target.value)} />
+          <Btn size="sm" variant="ghost" onClick={() => save()} disabled={saving} title="Save workflow">
             {saving ? <Spinner /> : null} Save
           </Btn>
-          <Btn size="sm" variant="ghost" onClick={openLoad}>
+          <Btn size="sm" variant="ghost" onClick={() => { setSaveAsName(workflowName); setSaveAsOpen(true); }} title="Save as a new workflow">
+            Save as
+          </Btn>
+          <Btn size="sm" variant="ghost" onClick={openLoad} title="Open a saved workflow">
             Open
           </Btn>
-          <Btn size="sm" variant="primary" onClick={run} disabled={running}>
+          <span className="toolbar-divider" />
+          <Btn size="sm" variant="subtle" onClick={undo} title="Undo (Ctrl+Z)" aria-label="Undo">↺</Btn>
+          <Btn size="sm" variant="subtle" onClick={redo} title="Redo (Ctrl+Shift+Z)" aria-label="Redo">↻</Btn>
+          <Btn size="sm" variant="subtle" onClick={() => zoomIn({ duration: 180 })} title="Zoom in" aria-label="Zoom in">＋</Btn>
+          <Btn size="sm" variant="subtle" onClick={() => zoomOut({ duration: 180 })} title="Zoom out" aria-label="Zoom out">－</Btn>
+          <Btn size="sm" variant="subtle" onClick={() => fitView({ padding: 0.2, maxZoom: 1.05, duration: 240 })} title="Fit to screen" aria-label="Fit to screen">Fit</Btn>
+          <Btn size="sm" variant="subtle" onClick={() => setViewport({ x: 0, y: 0, zoom: 1 }, { duration: 200 })} title="Reset view to 100%" aria-label="Reset view">1:1</Btn>
+          <span className="toolbar-divider" />
+          <Btn size="sm" variant="primary" onClick={run} disabled={running || nodes.length === 0}>
             {running ? <Spinner /> : null} {running ? 'Running…' : 'Run workflow'}
           </Btn>
+          {running ? (
+            <Btn
+              size="sm"
+              variant="danger"
+              title="Stop execution"
+              onClick={async () => {
+                if (!runId) return;
+                try {
+                  await api.workflows.cancel(runId);
+                  toast('Stopping workflow…', 'warn');
+                } catch (err: any) {
+                  toast(err.message, 'error');
+                }
+              }}
+            >
+              Stop
+            </Btn>
+          ) : null}
           <div className="spacer" style={{ flex: 1 }} />
+          <Btn size="sm" variant="subtle" onClick={() => setClearOpen(true)} title="Clear canvas">
+            Clear
+          </Btn>
           {fal && !fal.hasSecret ? <Badge tone="warn">fal has no key → mock</Badge> : null}
           {runId ? <Badge tone="info">run {runId.slice(4, 10)}</Badge> : null}
         </div>
@@ -427,16 +607,11 @@ function CanvasInner() {
           <>
             <div className="row between mb-12">
               <strong className="small">{selected.data.def?.label}</strong>
-              <Btn
-                size="sm"
-                variant="subtle"
-                onClick={() => {
-                  setNodes((nds) => nds.filter((n) => n.id !== selected.id));
-                  setEdges((eds) => eds.filter((e: any) => e.source !== selected.id && e.target !== selected.id));
-                  setSelectedId(null);
-                }}
-              >
+              <Btn size="sm" variant="subtle" onClick={() => deleteNode(selected.id)}>
                 Delete
+              </Btn>
+              <Btn size="sm" variant="subtle" onClick={() => duplicateNode(selected.id)}>
+                Duplicate
               </Btn>
             </div>
             <div className="tiny muted-2 mb-12">{selected.data.def?.description}</div>
@@ -574,6 +749,39 @@ function CanvasInner() {
             </tbody>
           </table>
         )}
+      </Modal>
+
+      <Modal
+        open={saveAsOpen}
+        title="Save workflow as"
+        width={460}
+        onClose={() => setSaveAsOpen(false)}
+        footer={
+          <>
+            <Btn variant="ghost" onClick={() => setSaveAsOpen(false)}>Cancel</Btn>
+            <Btn variant="primary" onClick={saveAs} disabled={!saveAsName.trim()}>Save as new</Btn>
+          </>
+        }
+      >
+        <Field label="Workflow name">
+          <input className="input" autoFocus value={saveAsName} onChange={(e) => setSaveAsName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && saveAs()} />
+        </Field>
+        <div className="tiny muted-2">A new workflow is created; the current one stays unchanged.</div>
+      </Modal>
+
+      <Modal
+        open={clearOpen}
+        title="Clear the canvas?"
+        width={420}
+        onClose={() => setClearOpen(false)}
+        footer={
+          <>
+            <Btn variant="ghost" onClick={() => setClearOpen(false)}>Cancel</Btn>
+            <Btn variant="danger" onClick={clearCanvas}>Clear canvas</Btn>
+          </>
+        }
+      >
+        <div className="small muted">All nodes and connections are removed from this canvas. Saved workflows and generated assets are not affected. Undo is available until you make another change.</div>
       </Modal>
     </div>
   );

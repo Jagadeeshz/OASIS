@@ -33,6 +33,7 @@ function buildRender(timeline, assets, { tmpDir }) {
   const inputs = [];
   const clips = [];
   for (const track of timeline.tracks) {
+    if (track.muted) continue;
     for (const clip of track.clips) {
       if (track.type === 'text') continue;
       const asset = assets.get(clip.assetId);
@@ -95,7 +96,7 @@ function buildRender(timeline, assets, { tmpDir }) {
   // Text overlays.
   let tCount = 0;
   const font = fontFile();
-  for (const track of timeline.tracks.filter((t) => t.type === 'text')) {
+  for (const track of timeline.tracks.filter((t) => t.type === 'text' && !t.muted)) {
     for (const clip of track.clips) {
       if (!font) throw new Error('No usable font found for text overlays');
       const txtFile = path.join(tmpDir, `text-${clip.id}.txt`);
@@ -151,7 +152,7 @@ function buildRender(timeline, assets, { tmpDir }) {
     '-preset',
     'veryfast',
     '-crf',
-    '20',
+    String(Math.round(Number(timeline.crf) || 20)),
     '-pix_fmt',
     'yuv420p',
     '-t',
@@ -307,7 +308,7 @@ class ExportService {
     return this.dto(this.db.get('SELECT * FROM exports WHERE id = ?', [id]));
   }
 
-  create({ projectId, timelineId, timeline, name = 'export' }) {
+  create({ projectId, timelineId, timeline, name = 'export', settings = null }) {
     if (!projectId) throw new Error('projectId is required');
     if (!timeline) throw new Error('timeline is required');
     const id = `exp_${crypto.randomUUID()}`;
@@ -321,7 +322,8 @@ class ExportService {
       ),
     );
     this.onEvent({ type: 'export:update', export: this.get(id) });
-    this._run(id, { projectId, timelineId, timeline }).catch(() => {});
+    const renderTimeline = settings ? applyRenderSettings(timeline, settings) : timeline;
+    this._run(id, { projectId, timelineId, timeline: renderTimeline }).catch(() => {});
     return this.get(id);
   }
 
@@ -394,6 +396,31 @@ class ExportService {
     if (ctrl) ctrl.abort();
     return true;
   }
+
+  /** Remove an export record. The rendered file is kept on disk unless purge is set. */
+  remove(id, { purge = false } = {}) {
+    const row = this.db.get('SELECT * FROM exports WHERE id = ?', [id]);
+    if (!row) return false;
+    this.db.tx(() => this.db.run('DELETE FROM exports WHERE id = ?', [id]));
+    if (purge) {
+      for (const f of [row.output_path, row.manifest_path]) {
+        if (f && f.startsWith(this.outDir)) { try { fs.unlinkSync(f); } catch { /* best effort */ } }
+      }
+    }
+    this.onEvent({ type: 'exports:changed' });
+    return true;
+  }
+}
+
+/** Clamp user render settings and apply them to a timeline copy. */
+function applyRenderSettings(timeline, settings) {
+  const even = (n) => Math.max(2, Math.round(Number(n) / 2) * 2);
+  const out = { ...timeline };
+  if (settings.width) out.width = Math.min(3840, Math.max(256, even(settings.width)));
+  if (settings.height) out.height = Math.min(2160, Math.max(144, even(settings.height)));
+  if (settings.fps) out.fps = Math.min(60, Math.max(12, Math.round(Number(settings.fps))));
+  if (settings.crf) out.crf = Math.min(32, Math.max(14, Math.round(Number(settings.crf))));
+  return out;
 }
 
 function slug(s) {

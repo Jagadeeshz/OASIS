@@ -335,6 +335,17 @@ function registerIpc() {
   handle('workflows:save', (input) => workflows.save(input || {}));
   handle('workflows:remove', (id) => workflows.remove(id));
   handle('workflows:run', (input) => workflows.run(input || {}));
+  handle('workflows:start', (input) =>
+    new Promise((resolve, reject) => {
+      try {
+        workflows
+          .run({ ...(input || {}), onStart: (runId) => resolve({ runId }) })
+          .catch(reject);
+      } catch (err) {
+        reject(err);
+      }
+    }),
+  );
   handle('workflows:cancel', (runId) => workflows.cancel(runId));
   handle('workflows:runs', (id, limit) => workflows.runs(id, limit));
 
@@ -349,9 +360,10 @@ function registerIpc() {
   handle('exports:create', (input) => {
     const tl = input.timelineId ? timelines.get(input.timelineId) : null;
     const data = input.timeline || tl?.data;
-    return exporter.create({ projectId: input.projectId, timelineId: input.timelineId, timeline: data, name: input.name || tl?.name });
+    return exporter.create({ projectId: input.projectId, timelineId: input.timelineId, timeline: data, name: input.name || tl?.name, settings: input.settings || null });
   });
   handle('exports:cancel', (id) => exporter.cancel(id));
+  handle('exports:remove', (id, opts) => exporter.remove(id, opts || {}));
   handle('exports:reveal', (id) => {
     const row = db.get('SELECT output_path FROM exports WHERE id = ?', [id]);
     if (!row?.output_path || !fs.existsSync(row.output_path)) throw new Error('Export file not found');

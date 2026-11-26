@@ -161,6 +161,19 @@ export default function PhotoCraft() {
             <Btn variant="primary" className="w-full mt-12" disabled={busy || !model} onClick={generate}>
               {busy ? <Spinner /> : null} {mode === 'create' ? 'Generate image' : mode === 'edit' ? 'Apply edit' : 'Remove background'}
             </Btn>
+            <Btn
+              variant="ghost"
+              className="w-full mt-8"
+              onClick={() => {
+                setValues({});
+                setForceMock(false);
+                setSource(null);
+                setPrompt('');
+                toast('Settings cleared', 'success');
+              }}
+            >
+              Clear settings
+            </Btn>
           </div>
 
           <JobProgress job={job} onCancel={() => job && api.jobs.cancel(job.id)} />
@@ -180,6 +193,27 @@ export default function PhotoCraft() {
                 <div className="row mt-12">
                   <Btn size="sm" onClick={() => job.result_asset_ids[0] && sendAsset(job.result_asset_ids[0], 'assets', 'photocraft')}>
                     Open in Asset Studio
+                  </Btn>
+                  <Btn
+                    size="sm"
+                    variant="ghost"
+                    onClick={async () => {
+                      const p = await api.assets.saveCopy(job.result_asset_ids[0]);
+                      if (p) toast('Saved to ' + p, 'success');
+                    }}
+                  >
+                    Download
+                  </Btn>
+                  <Btn
+                    size="sm"
+                    variant="ghost"
+                    disabled={!['failed', 'cancelled'].includes(job.status)}
+                    onClick={async () => {
+                      await api.jobs.retry(job.id);
+                      toast('Retrying job', 'info');
+                    }}
+                  >
+                    Retry
                   </Btn>
                   <Btn size="sm" variant="ghost" onClick={() => job.result_asset_ids[0] && sendAsset(job.result_asset_ids[0], 'filmcraft', 'photocraft')}>
                     Send to FilmCraft

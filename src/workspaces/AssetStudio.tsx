@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { api, Asset, fmtBytes, fmtDate } from '../lib/api';
 import { useApp } from '../lib/store';
-import { AssetCard, Badge, Btn, Confirm, Empty, Field, MockBadge, Spinner } from '../components/ui';
+import { AssetCard, AssetThumb, Badge, Btn, Confirm, Empty, Field, MockBadge, Modal, Spinner } from '../components/ui';
 
 export default function AssetStudio() {
   const { projectId, assetsRev, toast, consumeHandoff, sendAsset, refreshAssets } = useApp();
@@ -18,6 +18,11 @@ export default function AssetStudio() {
   const [loading, setLoading] = useState(false);
   const [deleting, setDeleting] = useState<Asset | null>(null);
   const [dragOver, setDragOver] = useState(false);
+  const [view, setView] = useState<'grid' | 'list'>('grid');
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [favoritesOnly, setFavoritesOnly] = useState(false);
+  const [compareOpen, setCompareOpen] = useState(false);
 
   const load = async () => {
     if (!projectId) return;
@@ -104,6 +109,60 @@ export default function AssetStudio() {
     }
   };
 
+  const toggleSelect = (id: string) =>
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+
+  const toggleFavorite = async (asset: Asset) => {
+    const next = asset.tags.includes('favorite') ? asset.tags.filter((t) => t !== 'favorite') : [...asset.tags, 'favorite'];
+    try {
+      const updated = await api.assets.update(asset.id, { tags: next });
+      setSelected(updated);
+      setTagDraft(updated.tags.join(', '));
+      await load();
+      toast(next.includes('favorite') ? 'Added to favourites' : 'Removed from favourites', 'success');
+    } catch (err: any) {
+      toast(err.message, 'error');
+    }
+  };
+
+  const bulkArchive = async () => {
+    if (!selectedIds.length) return;
+    try {
+      for (const id of selectedIds) await api.assets.archive(id, true);
+      toast('Archived ' + selectedIds.length + ' asset(s)', 'success');
+      setSelectedIds([]);
+      setSelectMode(false);
+      await load();
+      await refreshAssets();
+    } catch (err: any) {
+      toast(err.message, 'error');
+    }
+  };
+
+  const bulkFavorite = async () => {
+    if (!selectedIds.length) return;
+    try {
+      for (const id of selectedIds) {
+        const a = await api.assets.get(id);
+        if (!a.tags.includes('favorite')) await api.assets.update(id, { tags: [...a.tags, 'favorite'] });
+      }
+      toast('Favourited ' + selectedIds.length + ' asset(s)', 'success');
+      setSelectedIds([]);
+      await load();
+    } catch (err: any) {
+      toast(err.message, 'error');
+    }
+  };
+
+  const visible = useMemo(
+    () => (favoritesOnly ? items.filter((a) => a.tags.includes('favorite')) : items),
+    [items, favoritesOnly],
+  );
+  const comparePair = useMemo(
+    () => selectedIds.map((id) => items.find((a) => a.id === id)).filter(Boolean) as Asset[],
+    [selectedIds, items],
+  );
+
   const counts = useMemo(() => {
     const c = { image: 0, video: 0, audio: 0 };
     for (const a of items) c[a.media_type as 'image' | 'video' | 'audio'] = (c[a.media_type as 'image' | 'video' | 'audio'] || 0) + 1;
@@ -151,6 +210,25 @@ export default function AssetStudio() {
         <Btn size="sm" variant="ghost" onClick={load}>
           Apply
         </Btn>
+        <span className="toolbar-divider" />
+        <Btn size="sm" variant={selectMode ? 'primary' : 'ghost'} onClick={() => { setSelectMode((m) => !m); setSelectedIds([]); }} title="Select multiple assets">
+          Select
+        </Btn>
+        {selectMode ? (
+          <>
+            <Btn size="sm" variant="ghost" onClick={() => setSelectedIds(visible.map((a) => a.id))}>All</Btn>
+            <Btn size="sm" variant="ghost" onClick={() => setSelectedIds([])}>None</Btn>
+            <Btn size="sm" variant="ghost" disabled={!selectedIds.length} onClick={bulkFavorite}>★ Favourite</Btn>
+            <Btn size="sm" variant="ghost" disabled={!selectedIds.length} onClick={bulkArchive}>Archive</Btn>
+            <Btn size="sm" variant="ghost" disabled={selectedIds.length !== 2} onClick={() => setCompareOpen(true)}>Compare</Btn>
+          </>
+        ) : null}
+        <Btn size="sm" variant={favoritesOnly ? 'primary' : 'ghost'} onClick={() => setFavoritesOnly((f) => !f)} title="Show only favourited assets">
+          ★ Favourites
+        </Btn>
+        <span className="toolbar-divider" />
+        <Btn size="sm" variant={view === 'grid' ? 'primary' : 'ghost'} onClick={() => setView('grid')} title="Grid view" aria-label="Grid view">▦</Btn>
+        <Btn size="sm" variant={view === 'list' ? 'primary' : 'ghost'} onClick={() => setView('list')} title="List view" aria-label="List view">≡</Btn>
         <div className="spacer" />
         <span className="tiny muted-2">
           {items.length} shown · {counts.image} images · {counts.video} video · {counts.audio} audio
@@ -167,11 +245,59 @@ export default function AssetStudio() {
           hint="Drop files here, use Import media, or generate in PhotoCraft / FilmCraft."
           action={<Btn onClick={importFiles}>Import media</Btn>}
         />
-      ) : (
+      ) : view === 'grid' ? (
         <div className="asset-grid">
-          {items.map((a) => (
-            <AssetCard key={a.id} asset={a} selected={selected?.id === a.id} onClick={() => setSelectedId(a.id)} onDoubleClick={() => setSelectedId(a.id)} />
+          {visible.map((a) => (
+            <AssetCard
+              key={a.id}
+              asset={a}
+              selected={selectMode ? selectedIds.includes(a.id) : selected?.id === a.id}
+              onClick={() => (selectMode ? toggleSelect(a.id) : setSelectedId(a.id))}
+              onDoubleClick={() => setSelectedId(a.id)}
+            />
           ))}
+        </div>
+      ) : (
+        <div className="panel">
+          <table className="table">
+            <thead>
+              <tr>
+                <th style={{ width: 54 }} />
+                <th>Name</th>
+                <th>Type</th>
+                <th>Details</th>
+                <th>Verification</th>
+                <th>Created</th>
+                <th />
+              </tr>
+            </thead>
+            <tbody>
+              {visible.map((a) => (
+                <tr
+                  key={a.id}
+                  className={selectMode && selectedIds.includes(a.id) ? 'row-selected' : ''}
+                  onClick={() => (selectMode ? toggleSelect(a.id) : setSelectedId(a.id))}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <td><AssetThumb asset={a} size={34} /></td>
+                  <td>
+                    <div className="small">{a.display_name}</div>
+                    <div className="tiny muted-2">{a.source_workspace || 'import'}</div>
+                  </td>
+                  <td><Badge media={a.media_type}>{a.media_type}</Badge></td>
+                  <td className="tiny muted-2">
+                    {a.width ? a.width + '×' + a.height : ''}
+                    {a.duration ? ' · ' + a.duration.toFixed(1) + 's' : ''} · {fmtBytes(a.file_size)}
+                  </td>
+                  <td>{a.isMock ? <Badge tone="mock">Mock — unverified</Badge> : <Badge tone="ok">{a.verification}</Badge>}</td>
+                  <td className="tiny muted-2">{fmtDate(a.created_at)}</td>
+                  <td>
+                    <Btn size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setSelectedId(a.id); }}>Open</Btn>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
@@ -332,6 +458,9 @@ export default function AssetStudio() {
             <Btn size="sm" variant="ghost" onClick={async () => { const p = await api.assets.saveCopy(selected.id); if (p) toast(`Saved to ${p}`, 'success'); }}>
               Save a copy
             </Btn>
+            <Btn size="sm" variant={selected.tags.includes('favorite') ? 'primary' : 'ghost'} onClick={() => toggleFavorite(selected)}>
+              ★ {selected.tags.includes('favorite') ? 'Favourited' : 'Favourite'}
+            </Btn>
             <Btn size="sm" variant="ghost" onClick={async () => { await api.assets.archive(selected.id, true); toast('Archived'); setSelected(null); await load(); }}>
               Archive
             </Btn>
@@ -341,6 +470,22 @@ export default function AssetStudio() {
           </div>
         </div>
       ) : null}
+
+      <Modal open={compareOpen} title="Compare assets" width={980} onClose={() => setCompareOpen(false)} footer={<Btn variant="ghost" onClick={() => setCompareOpen(false)}>Close</Btn>}>
+        <div className="compare">
+          {comparePair.map((a) => (
+            <figure key={a.id}>
+              <div className="preview-stage">
+                {a.media_type === 'video' ? <video src={a.fileUrl} controls /> : a.media_type === 'audio' ? <audio src={a.fileUrl} controls style={{ width: '100%' }} /> : <img src={a.fileUrl} alt={a.display_name} />}
+              </div>
+              <figcaption>
+                {a.display_name} · {a.width ? a.width + '×' + a.height : ''} · v{a.version}
+                {a.isMock ? ' · Mock — unverified' : ''}
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </Modal>
 
       <Confirm
         open={!!deleting}
