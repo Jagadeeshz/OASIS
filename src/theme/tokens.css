@@ -141,6 +141,12 @@
   --bindu-danger-soft: rgba(255, 64, 95, 0.13);
   --bindu-info: #398bff;
   --bindu-info-soft: rgba(57, 139, 255, 0.13);
+  /* Text tones for status surfaces (measured >= 7:1 on their soft fills). */
+  --bindu-ok-text: #8ce8b6;
+  --bindu-warn-text: #ffc27a;
+  --bindu-danger-text: #ffb3bd;
+  --bindu-info-text: #a8c9ff;
+  --bindu-mask-ink: #000000; /* SVG mask stencil, never painted */
   --bindu-mock: #ffb545;
   --bindu-mock-soft: rgba(255, 181, 69, 0.14);
 
