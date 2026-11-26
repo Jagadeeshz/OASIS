@@ -2,9 +2,15 @@ name: build
 
 on:
   push:
-    branches: [feat/oasis-desktop, main]
+    branches: ['main', 'feat/**']
     tags: ['v*']
+  pull_request:
+    branches: ['main']
   workflow_dispatch:
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   windows:
@@ -25,6 +31,7 @@ jobs:
   macos-arm64:
     runs-on: macos-14
     env:
+      CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.MAC_CERT_P12 == '' && 'false' || 'true' }}
       CSC_LINK: ${{ secrets.MAC_CERT_P12 }}
       CSC_KEY_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
       APPLE_ID: ${{ secrets.APPLE_ID }}
@@ -45,8 +52,9 @@ jobs:
             release/*.zip
 
   macos-x64:
-    runs-on: macos-13
+    runs-on: macos-14
     env:
+      CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.MAC_CERT_P12 == '' && 'false' || 'true' }}
       CSC_LINK: ${{ secrets.MAC_CERT_P12 }}
       CSC_KEY_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
       APPLE_ID: ${{ secrets.APPLE_ID }}
