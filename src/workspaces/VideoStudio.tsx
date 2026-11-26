@@ -34,7 +34,7 @@ const cssToken = (name: string, fallback: string) => {
 };
 
 export default function VideoStudio() {
-  const { projectId, assets, toast, consumeHandoff, refreshAssets, assetsRev } = useApp();
+  const { projectId, assets, toast, consumeHandoff, refreshAssets, assetsRev, sendAsset } = useApp();
   const [timelines, setTimelines] = useState<any[]>([]);
   const [timelineId, setTimelineId] = useState<string | null>(null);
   const [name, setName] = useState('Untitled edit');
@@ -770,6 +770,33 @@ export default function VideoStudio() {
             </>
           )}
           <div className="tiny muted-2">Drag the clip body to move it, or its edges to trim.</div>
+
+          {clip.clip.assetId ? (
+            <>
+              <div className="tiny muted-2 mt-12 mb-8">SEND CLIP TO</div>
+              <div className="row wrap">
+                <Btn size="sm" variant="ghost" onClick={() => sendAsset(clip.clip.assetId!, 'effectscraft', 'video-studio')}>
+                  EffectsCraft
+                </Btn>
+                {clip.track.type === 'video' && assets.find((a) => a.id === clip.clip.assetId)?.media_type === 'video' ? (
+                  <Btn size="sm" variant="ghost" onClick={() => sendAsset(clip.clip.assetId!, 'filmcraft', 'video-studio')}>
+                    FilmCraft
+                  </Btn>
+                ) : null}
+                {assets.find((a) => a.id === clip.clip.assetId)?.media_type === 'image' ? (
+                  <Btn size="sm" variant="ghost" onClick={() => sendAsset(clip.clip.assetId!, 'photocraft', 'video-studio')}>
+                    PhotoCraft
+                  </Btn>
+                ) : null}
+                <Btn size="sm" variant="ghost" onClick={() => sendAsset(clip.clip.assetId!, 'assets', 'video-studio')}>
+                  Asset Studio
+                </Btn>
+              </div>
+              <div className="tiny muted-2 mt-8">
+                The original clip stays in the timeline; results come back as new Asset Studio versions.
+              </div>
+            </>
+          ) : null}
         </div>
       ) : null}
     </div>
