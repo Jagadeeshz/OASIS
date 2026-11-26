@@ -2,7 +2,7 @@
 
 **Delivery status: Working MVP** — one installable Windows desktop application with all six workspaces integrated through shared projects, assets, jobs and provider services.
 
-Last verified: installer built and installed to a clean directory, installed binary launched from its own `app.asar`, E2E 8/8, restart persistence confirmed. Live fal.ai generation is **not yet verified** (no API key on this machine) and is blocked on that one step — see §4.
+Last verified: installer built and installed to a clean directory, installed binary launched from its own `app.asar`, E2E 8/8, restart persistence confirmed. The interface was then rebuilt on the BINDU/PRISM theme ([THEME.md](THEME.md)) with 8/8 E2E re-passing. Live fal.ai generation is **blocked at the provider, not in the app**: the configured key authenticates, but every call returns `403 — Exhausted balance`; the app records those as failed jobs. See §4.
 
 ---
 
@@ -15,6 +15,7 @@ Last verified: installer built and installed to a clean directory, installed bin
 - [x] Single-instance lock; native window, custom icon, app menu, persistent user data.
 - [x] Project create / open / rename / archive / delete; project context shared by all workspaces.
 - [x] Data survives restart (project, assets, jobs, exports; timeline saved explicitly).
+- [x] BINDU/PRISM interface applied to every screen: token-only colours, bundled type stack, yellow interaction accent, spectrum used only as media/category meaning, reduced-motion support ([THEME.md](THEME.md)).
 
 ### Assets and jobs (shared services)
 - [x] Every workspace writes through one asset service; outputs appear in Asset Studio with no re-upload.
@@ -77,7 +78,7 @@ Last verified: installer built and installed to a clean directory, installed bin
 
 | Item | State |
 |---|---|
-| Live fal.ai calls | **Not verified.** Blocked on a key. Adapter, catalog and UI are complete and contract-tested; the catalog's 7 endpoints were validated against fal's published OpenAPI. |
+| Live fal.ai calls | **Blocked at the provider.** Key is configured and authenticates; fal returns `403 User is locked. Reason: Exhausted balance` for every call. Request construction/queue submission is proven (a real HTTP response, recorded as a failed job), but no generation has completed. Adapter/catalog/UI are complete and contract-tested. |
 | Live DeepSeek / Ollama | **Not verified.** Adapters + UI complete; tested against fakes. |
 | Audio in timeline preview | Not implemented — audio is mixed only at export (preview is visual). |
 | Timeline scope | Two video layers, text overlay, hard cut/fade, volume; no keyframes, colour grading, speed ramps, multicam. |
@@ -100,7 +101,7 @@ Last verified: installer built and installed to a clean directory, installed bin
 
 ## 4. Blockers and exact unblock actions
 
-1. **Live generation** — needs a fal.ai key entered in **Providers → fal.ai → Save → Test connection**, then one PhotoCraft job with `FLUX.1 [schnell]`. Expected: job `succeeded`, asset `verified`, `execution_mode: live`.
+1. **Live generation** — the key is already configured and accepted; the fal.ai account is locked for **exhausted balance**. Top up at <https://fal.ai/dashboard/billing>, then run one PhotoCraft job with `FLUX.1 [schnell]`. Expected: job `succeeded`, asset `verified`, `execution_mode: live`. No code change is required.
 2. **DeepSeek/Ollama** — enable + key/endpoint, Test connection, use "Improve prompt" once.
 3. **Signed distribution** — supply a code-signing certificate (`CSC_LINK` / `CSC_KEY_PASSWORD`) before sharing the installer externally.
 4. **Installer uninstall verification** — run `Uninstall OASIS.exe` from the install directory and confirm the app is removed (user data is intentionally preserved).

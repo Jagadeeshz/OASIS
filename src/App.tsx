@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { NavKey, useApp } from './lib/store';
 import { Badge, Btn, Spinner } from './components/ui';
 import Dashboard from './core/Dashboard';
+import mark from './assets/oasis-mark.png';
 import Projects from './core/Projects';
 import Providers from './core/Providers';
 import Jobs from './core/Jobs';
@@ -97,7 +98,7 @@ export default function App() {
     <div className="app">
       <aside className="sidebar">
         <div className="brand">
-          <div className="brand-mark" />
+          <img className="brand-mark" src={mark} alt="OASIS" width={30} height={30} />
           <div className="brand-text">
             <strong>OASIS</strong>
             <span>creative production</span>

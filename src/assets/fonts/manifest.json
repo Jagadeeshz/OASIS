@@ -1,0 +1,51 @@
+[
+  {
+    "family": "Cormorant Garamond",
+    "weight": "700",
+    "url": "https://fonts.gstatic.com/s/cormorantgaramond/v21/co3umX5slCNuHLi8bLeY9MK7whWMhyjypVO7abI26QOD_hg9KnTOig.woff2",
+    "file": "cormorant-garamond-700.woff2",
+    "bytes": 22340
+  },
+  {
+    "family": "DM Mono",
+    "weight": "400",
+    "url": "https://fonts.gstatic.com/s/dmmono/v16/aFTU7PB1QTsUX8KYthqQBA.woff2",
+    "file": "dm-mono-400.woff2",
+    "bytes": 14820
+  },
+  {
+    "family": "DM Mono",
+    "weight": "500",
+    "url": "https://fonts.gstatic.com/s/dmmono/v16/aFTR7PB1QTsUX8KYvumzEYOtbQ.woff2",
+    "file": "dm-mono-500.woff2",
+    "bytes": 14988
+  },
+  {
+    "family": "DM Sans",
+    "weight": "300",
+    "url": "https://fonts.gstatic.com/s/dmsans/v17/rP2Yp2ywxg089UriI5-g4vlH9VoD8Cmcqbu0-K4.woff2",
+    "file": "dm-sans-300.woff2",
+    "bytes": 36932
+  },
+  {
+    "family": "DM Sans",
+    "weight": "400",
+    "url": "https://fonts.gstatic.com/s/dmsans/v17/rP2Yp2ywxg089UriI5-g4vlH9VoD8Cmcqbu0-K4.woff2",
+    "file": "dm-sans-400.woff2",
+    "bytes": 36932
+  },
+  {
+    "family": "DM Sans",
+    "weight": "500",
+    "url": "https://fonts.gstatic.com/s/dmsans/v17/rP2Yp2ywxg089UriI5-g4vlH9VoD8Cmcqbu0-K4.woff2",
+    "file": "dm-sans-500.woff2",
+    "bytes": 36932
+  },
+  {
+    "family": "DM Sans",
+    "weight": "600",
+    "url": "https://fonts.gstatic.com/s/dmsans/v17/rP2Yp2ywxg089UriI5-g4vlH9VoD8Cmcqbu0-K4.woff2",
+    "file": "dm-sans-600.woff2",
+    "bytes": 36932
+  }
+]

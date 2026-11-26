@@ -123,7 +123,7 @@ export default function Exports() {
               {selected.status === 'running' ? <Spinner /> : null}
             </div>
             {selected.status === 'succeeded' && selected.fileUrl ? (
-              <video src={selected.fileUrl} controls style={{ width: '100%', borderRadius: 10, background: '#000' }} />
+              <video src={selected.fileUrl} controls className="preview-canvas" style={{ width: '100%' }} />
             ) : null}
             <dl className="kv">
               <dt>Output</dt>

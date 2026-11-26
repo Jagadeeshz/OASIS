@@ -1,9 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { api, Asset, ParamDef, fmtBytes, fmtDuration } from '../lib/api';
 
-export function Badge({ tone = '', children, title }: { tone?: string; children: React.ReactNode; title?: string }) {
+export function Badge({ tone = '', media, children, title }: { tone?: string; media?: string; children: React.ReactNode; title?: string }) {
   return (
-    <span className={`badge ${tone}`} title={title}>
+    <span className={`badge ${tone}`} data-media={media} title={title}>
       {children}
     </span>
   );
@@ -190,7 +190,7 @@ export function AssetThumb({ asset, size = 42, videoBadge = true }: { asset: Ass
   const icon = asset.media_type === 'video' ? '▶' : asset.media_type === 'audio' ? '♪' : '▤';
   return (
     <div className="thumb-square" style={style} title={asset.display_name}>
-      {videoBadge && asset.thumbUrl ? <img src={asset.thumbUrl} alt="" /> : <span style={{ fontSize: size * 0.4, color: '#7b8598' }}>{icon}</span>}
+      {videoBadge && asset.thumbUrl ? <img src={asset.thumbUrl} alt="" /> : <span className="thumb-icon" style={{ fontSize: size * 0.4 }}>{icon}</span>}
     </div>
   );
 }
@@ -226,17 +226,13 @@ export function AssetCard({
             <span style={{ fontSize: 20 }}>♪</span> audio
           </div>
         )}
-        {asset.isMock ? (
-          <span className="stamp">
-            <MockBadge reason={asset.mock_reason} label={false} />
-          </span>
-        ) : null}
         <span className="type">
-          <Badge>{asset.media_type}</Badge>
+          <Badge media={asset.media_type}>{asset.media_type}</Badge>
         </span>
       </div>
       <div className="meta">
         <div className="name">{asset.display_name}</div>
+        {asset.isMock ? <MockBadge reason={asset.mock_reason} label={false} /> : null}
         <div className="sub">
           <span>{asset.width && asset.height ? `${asset.width}×${asset.height}` : fmtDuration(asset.duration)}</span>
           <span>·</span>

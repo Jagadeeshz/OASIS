@@ -72,22 +72,22 @@ export default function Dashboard() {
           </div>
           <div className="panel-body stack">
             {providers.map((p) => (
-              <div key={p.id} className="row between">
-                <div>
+              <div key={p.id} className="provider-row">
+                <div className="provider-id">
                   <div className="row" style={{ gap: 8 }}>
                     <strong className="small">{p.label}</strong>
                     <Badge>{p.role}</Badge>
                     {p.enabled ? null : <Badge>disabled</Badge>}
                   </div>
-                  <div className="tiny muted-2 mt-8">
+                  <div className="tiny muted-2 mt-8 provider-capabilities">
                     {p.capabilities.slice(0, 3).join(' · ')}
                   </div>
                 </div>
-                <div className="row" style={{ gap: 6 }}>
+                <div className="provider-state">
                   {p.requiresKey ? (
-                    <span className="tiny muted-2">{p.hasSecret ? p.secretHint : 'no key'}</span>
+                    <span className="tiny muted-2 nowrap">{p.hasSecret ? p.secretHint : 'no key'}</span>
                   ) : (
-                    <span className="tiny muted-2">{p.config.endpoint}</span>
+                    <span className="tiny muted-2 nowrap">{p.config.endpoint}</span>
                   )}
                   <StatusBadge status={p.status} />
                 </div>
@@ -122,8 +122,7 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div className="row" style={{ gap: 6 }}>
-                  {j.isMock ? <MockBadge label={false} /> : null}
-                  <StatusBadge status={j.status} />
+                  {j.isMock ? <MockBadge label={false} /> : <StatusBadge status={j.status} />}
                 </div>
               </div>
             ))}

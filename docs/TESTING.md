@@ -61,6 +61,24 @@ Driver: `scripts/e2e.mjs` (CDP over `--remote-debugging-port=9333`), which click
 
 Screenshots: `shots/e2e-01…09*.png`.
 
+**Provider state and determinism:** the dev profile has a fal.ai key saved, so a canvas run would go live. Step 4 reads the provider's enabled state, disables fal for the duration of the workflow, then restores it — the test therefore exercises the real "provider unavailable ⇒ mock" branch without spending credit or depending on provider latency.
+
+### 3.1 Theme audit (`scripts/ui-tour.mjs`)
+
+Run against the restyled build with all 15 screens visited:
+
+| Check | Result |
+|---|---|
+| Fonts (DM Sans / DM Mono / Cormorant Garamond) | loaded from bundled woff2 |
+| Ground / text | `#09090B` / `#F5F5F0`, contrast **18.19:1** |
+| Secondary / muted text on panel | 7.30:1 / 5.28:1 |
+| Ink on yellow CTA | 13.90:1 |
+| Media badge colours on panel | 6.56 / 7.12 / 9.88 |
+| Screens captured | 15 views, hover, focus, 1180px, 1920px |
+| Console errors during tour | none |
+
+Details and the token map: [THEME.md](THEME.md).
+
 ---
 
 ## 4. Installer and installed-app test
@@ -84,7 +102,7 @@ This is a genuine installer test: the binary that ran was installed by NSIS from
 
 | Area | Why | What would verify it |
 |---|---|---|
-| Live fal.ai generation (image, video, TTS, rembg) | No fal.ai key is configured on this machine. All fal paths were exercised against a contract-faithful fake queue (`tests/jobs.test.cjs`, `tests/providers.test.cjs`) and the catalog was validated against fal's OpenAPI — but **no real provider call has been made**. | Add a key in Providers → fal → Test connection → run one FLUX.1 schnell job; status should read `verified` / `live`. |
+| Live fal.ai generation (image, video, TTS, rembg) | A fal.ai key **is** configured in the dev profile, but the account is blocked at the provider: every live call returns `HTTP 403 … User is locked. Reason: Exhausted balance.` The request path (auth header, queue URL, submission) demonstrably works — fal answers with a billing error rather than 401/404 — but no generation completes. Four such attempts are recorded as **failed** jobs, not mock. | Top up the fal.ai balance, then run one FLUX.1 schnell job; it should become `verified` / `live`. |
 | Live DeepSeek / Ollama | Not configured; adapters tested against fakes only. | Enable each, Test connection, use "Improve prompt". |
 | NSIS uninstall | Not executed (would remove the test install). | `Settings → Apps → OASIS → Uninstall`, or `Uninstall OASIS.exe` in the install dir. |
 | Signed binaries | No code-signing certificate. Windows SmartScreen may warn on first run of an unsigned installer. | Sign with an org certificate (`CSC_LINK`) before distribution. |

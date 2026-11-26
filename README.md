@@ -41,6 +41,7 @@ Requirements: Windows 10/11 x64, **ffmpeg/ffprobe on PATH** for video features, 
 | Document | Contents |
 |---|---|
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Process model, data model, services, provenance, security boundaries |
+| [docs/THEME.md](docs/THEME.md) | BINDU/PRISM design system: tokens, palette, spectrum meaning, contrast, known issues |
 | [docs/INSTALLATION.md](docs/INSTALLATION.md) | Prerequisites, installer, silent install, uninstall, packaging, data locations |
 | [docs/PROVIDER_SETUP.md](docs/PROVIDER_SETUP.md) | fal.ai key + verified model catalog, DeepSeek, Ollama, execution modes, troubleshooting |
 | [docs/USER_GUIDE.md](docs/USER_GUIDE.md) | Workspace-by-workspace guide, mock mode, shortcuts |

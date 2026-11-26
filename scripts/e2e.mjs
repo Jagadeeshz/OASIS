@@ -126,7 +126,11 @@ try {
   await shot('e2e-03-assetstudio.png');
   await evaluate(`(() => { const b=[...document.querySelectorAll('.drawer .btn')].find(x=>x.textContent.trim()==='✕'); if(b) b.click(); return true; })()`);
 
-  // 4. AI Canvas: run the starter workflow
+  // 4. AI Canvas: run the starter workflow on the deterministic offline path
+  //    (a live fal key would send this to the real queue — the test must not spend credit
+  //     or depend on network latency, so the provider is disabled for this step and restored after).
+  const falWasEnabled = await evaluate(`window.oasis.providers.list().then(l => !!(l.find(p => p.id === 'fal') || {}).enabled)`).catch(() => true);
+  await evaluate(`window.oasis.providers.setEnabled('fal', false)`).catch(() => {});
   await clickText('.nav-item', 'AI Canvas');
   await waitFor(`!!document.querySelector('.react-flow')`, { timeout: 15000, label: 'canvas' });
   const nodes = await evaluate(`document.querySelectorAll('.node-card').length`);
@@ -140,6 +144,7 @@ try {
     return done >= 3 ? 'DONE:'+done : '';
   })()`, { timeout: 90000, label: 'workflow run' });
   record('AI Canvas executes workflow nodes', nodes >= 3 && String(runState).startsWith('DONE'), `nodes:${nodes}, ${runState}`);
+  await evaluate(`window.oasis.providers.setEnabled('fal', ${falWasEnabled})`).catch(() => {});
   await shot('e2e-04-canvas.png');
 
   // 5. Video Studio: timeline + real export

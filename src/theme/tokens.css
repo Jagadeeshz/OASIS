@@ -1,0 +1,279 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   OASIS — BINDU v4.0 / PRISM theme tokens
+   Structure, scale, motion and rules follow the bindu-v4-design-system skill.
+   Colour values are the OASIS brand palette (dark × luminous yellow × spectrum).
+   Rule 5 of the skill: every colour in the app references a token defined here.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Self-hosted BINDU type stack (no CDN, works offline in the desktop app) ── */
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 300;
+  font-display: swap;
+  src: url('../assets/fonts/dm-sans-300.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/dm-sans-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../assets/fonts/dm-sans-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../assets/fonts/dm-sans-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'DM Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/dm-mono-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'DM Mono';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../assets/fonts/dm-mono-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Cormorant Garamond';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../assets/fonts/cormorant-garamond-700.woff2') format('woff2');
+}
+
+:root {
+  /* ═══════════ 1. GROUND — the void family ═══════════ */
+  --bindu-void: #09090b; /* window backdrop        */
+  --bindu-void-1: #101014; /* sidebar / behind main  */
+  --bindu-void-2: #17171d; /* panel                  */
+  --bindu-void-3: #1d1d24; /* raised card / input    */
+  --bindu-void-4: #26262f; /* elevated / toolbar     */
+  --bindu-sunken: #0c0c0f; /* wells: inputs, stages  */
+  --bindu-border: #303039;
+  --bindu-border-soft: rgba(245, 245, 240, 0.07); /* border @ 7% shunya */
+  --bindu-border-strong: rgba(245, 245, 240, 0.14);
+
+  /* ═══════════ 2. TEXT — opacity tiers on shunya ═══════════ */
+  --bindu-shunya: #f5f5f0;
+  --bindu-text-primary: #f5f5f0;
+  --bindu-text-secondary: #a5a5ad;
+  --bindu-text-muted: #8b8b94; /* raised from #707078: 5.28:1 on panel, 3.64:1 failed WCAG for 10px labels */
+  --bindu-text-ghost: rgba(245, 245, 240, 0.28);
+  --bindu-ink: #09090b; /* text on yellow */
+
+  /* ═══════════ 3. LUMEN — the single interaction accent ═══════════ */
+  /* Skill's "soma" role, extended from CTA-only to the interaction accent by
+     explicit OASIS brief: primary buttons, active nav, selection, progress,
+     focus. Never on body copy, never on headings, never as a page fill. */
+  --bindu-lumen: #ffd400;
+  --bindu-lumen-bright: #ffe45c;
+  --bindu-lumen-deep: #eab900;
+  --bindu-lumen-ink: #09090b;
+  --bindu-lumen-soft: rgba(255, 212, 0, 0.18); /* glow @ 18% lumen */
+  --bindu-lumen-fill: rgba(255, 212, 0, 0.09); /* selected surface @ 9% */
+  --bindu-lumen-line: rgba(255, 212, 0, 0.42); /* hairline @ 42% */
+  --bindu-lumen-gradient: linear-gradient(120deg, #ffe45c 0%, #ffd400 54%, #eab900 100%);
+
+  /* ═══════════ 4. SPECTRUM — meaning, not decoration ═══════════ */
+  /* Prism order, used for media/type identity, hairlines, rims and ambient. */
+  --bindu-violet: #8855ff;
+  --bindu-blue: #398bff;
+  --bindu-cyan: #22d3ee;
+  --bindu-green: #43d17a;
+  --bindu-orange: #ff8a00;
+  --bindu-red: #ff405f;
+  --bindu-magenta: #d946ef;
+
+  --bindu-spectrum-gradient: linear-gradient(
+    90deg,
+    #8855ff 0%,
+    #398bff 18%,
+    #22d3ee 36%,
+    #43d17a 52%,
+    #ffd400 68%,
+    #ff8a00 84%,
+    #ff405f 100%
+  );
+
+  /* Semantic media identity — one colour per creative data type. */
+  --bindu-media-image: #a78bfa; /* violet, lifted for text contrast   */
+  --bindu-media-video: #5ea6ff; /* blue, lifted for text contrast     */
+  --bindu-media-audio: #22d3ee; /* cyan                               */
+  --bindu-media-text: #ffa733; /* orange, lifted                    */
+  --bindu-media-image-soft: rgba(136, 85, 255, 0.14);
+  --bindu-media-video-soft: rgba(57, 139, 255, 0.14);
+  --bindu-media-audio-soft: rgba(34, 211, 238, 0.12);
+  --bindu-media-text-soft: rgba(255, 138, 0, 0.12);
+
+  /* Workflow node categories. */
+  --bindu-cat-input: var(--bindu-cyan);
+  --bindu-cat-model: var(--bindu-lumen);
+  --bindu-cat-generate: var(--bindu-violet);
+  --bindu-cat-process: var(--bindu-green);
+  --bindu-cat-output: var(--bindu-orange);
+
+  /* ═══════════ 5. SURFACE STATES ═══════════ */
+  --bindu-surface-hover: rgba(245, 245, 240, 0.04);
+  --bindu-surface-active: rgba(245, 245, 240, 0.08);
+  --bindu-surface-selected: rgba(255, 212, 0, 0.1);
+
+  /* ═══════════ 6. STATUS ═══════════ */
+  --bindu-ok: #43d17a;
+  --bindu-ok-soft: rgba(67, 209, 122, 0.13);
+  --bindu-warn: #ff8a00;
+  --bindu-warn-soft: rgba(255, 138, 0, 0.13);
+  --bindu-danger: #ff405f;
+  --bindu-danger-soft: rgba(255, 64, 95, 0.13);
+  --bindu-info: #398bff;
+  --bindu-info-soft: rgba(57, 139, 255, 0.13);
+  --bindu-mock: #ffb545;
+  --bindu-mock-soft: rgba(255, 181, 69, 0.14);
+
+  /* ═══════════ 7. TYPE ═══════════ */
+  --bindu-font-display: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+  --bindu-font-body: 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --bindu-font-mono: 'DM Mono', 'JetBrains Mono', Consolas, monospace;
+
+  --bindu-weight-light: 300;
+  --bindu-weight-body: 400;
+  --bindu-weight-medium: 500;
+  --bindu-weight-strong: 600;
+  --bindu-weight-display: 700;
+
+  --bindu-t-micro: 10px;
+  --bindu-t-label: 11px;
+  --bindu-t-body: 13px;
+  --bindu-t-body-lg: 15px;
+  --bindu-t-subhead: 17px;
+  --bindu-t-h3: 20px;
+  --bindu-t-h2: 24px;
+  --bindu-t-h1: 28px;
+  --bindu-t-display: 34px;
+  --bindu-t-hero: 44px;
+
+  --bindu-leading-tight: 1.15;
+  --bindu-leading-normal: 1.5;
+  --bindu-leading-label: 1.35;
+
+  --bindu-tracking-tight: -0.011em;
+  --bindu-tracking-label: 0.1em;
+  --bindu-tracking-brand: 0.18em;
+  --bindu-tracking-mono: 0.04em;
+
+  /* ═══════════ 8. SPACE / RADIUS / LAYOUT ═══════════ */
+  --bindu-sp-1: 4px;
+  --bindu-sp-2: 8px;
+  --bindu-sp-3: 12px;
+  --bindu-sp-4: 16px;
+  --bindu-sp-5: 24px;
+  --bindu-sp-6: 32px;
+  --bindu-sp-7: 48px;
+
+  --bindu-r-sm: 4px;
+  --bindu-r-md: 6px;
+  --bindu-r-lg: 8px;
+  --bindu-r-xl: 12px;
+  --bindu-r-full: 9999px;
+
+  --bindu-topbar-h: 56px;
+  --bindu-sidebar-w: 232px;
+  --bindu-control-sm: 26px;
+  --bindu-control: 30px;
+  --bindu-control-lg: 36px;
+  --bindu-row-h: 28px;
+
+  /* ═══════════ 9. DEPTH ═══════════ */
+  --bindu-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --bindu-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.25);
+  --bindu-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.25);
+  --bindu-shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.46), 0 4px 10px rgba(0, 0, 0, 0.3);
+  --bindu-shadow-modal: 0 24px 64px rgba(0, 0, 0, 0.7), 0 8px 24px rgba(0, 0, 0, 0.5);
+  --bindu-inset-top: inset 0 1px 0 rgba(245, 245, 240, 0.06);
+  --bindu-glow-lumen: 0 0 0 1px rgba(255, 212, 0, 0.35), 0 0 20px rgba(255, 212, 0, 0.16);
+  --bindu-glow-violet: 0 0 32px rgba(136, 85, 255, 0.18);
+  --bindu-glow-blue: 0 0 32px rgba(57, 139, 255, 0.18);
+
+  /* ═══════════ 10. GLASS (overlays only) ═══════════ */
+  --bindu-glass: rgba(16, 16, 20, 0.9);
+  --bindu-glass-heavy: rgba(9, 9, 11, 0.9);
+  --bindu-glass-blur: blur(20px) saturate(1.4);
+  --bindu-glass-blur-heavy: blur(36px) saturate(1.6);
+  --bindu-glass-border: rgba(245, 245, 240, 0.1);
+
+  /* ═══════════ 11. RIM LIGHTS — the sanctioned spectrum moment ═══════════ */
+  --bindu-rim-neutral: rgba(255, 255, 255, 0.12);
+  --bindu-rim-lumen: rgba(255, 212, 0, 0.38);
+  --bindu-rim-spectrum: linear-gradient(90deg, transparent, rgba(136, 85, 255, 0.4), rgba(34, 211, 238, 0.4), rgba(255, 138, 0, 0.35), transparent);
+
+  /* ═══════════ 12. AMBIENT LIGHT ═══════════ */
+  --bindu-ambient-prism:
+    radial-gradient(ellipse 40% 30% at 12% 8%, rgba(136, 85, 255, 0.09) 0%, transparent 62%),
+    radial-gradient(ellipse 34% 26% at 84% 12%, rgba(57, 139, 255, 0.08) 0%, transparent 58%),
+    radial-gradient(ellipse 46% 34% at 62% 92%, rgba(255, 212, 0, 0.06) 0%, transparent 64%);
+  --bindu-ambient-lumen:
+    radial-gradient(ellipse 60% 46% at 74% 6%, rgba(255, 212, 0, 0.08) 0%, transparent 62%),
+    radial-gradient(ellipse 40% 30% at 8% 78%, rgba(136, 85, 255, 0.05) 0%, transparent 60%);
+  --bindu-grid-dot: rgba(245, 245, 240, 0.055);
+
+  /* ═══════════ 13. MOTION ═══════════ */
+  --bindu-ease: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --bindu-ease-out: cubic-bezier(0, 0, 0.2, 1);
+  --bindu-ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --bindu-ease-enter: cubic-bezier(0.16, 1, 0.3, 1);
+  --bindu-dur-fast: 120ms;
+  --bindu-dur-base: 200ms;
+  --bindu-dur-slow: 400ms;
+  --bindu-dur-panel: 420ms;
+
+  /* ═══════════ 14. Z-INDEX ═══════════ */
+  --bindu-z-raised: 10;
+  --bindu-z-overlay: 100;
+  --bindu-z-dropdown: 200;
+  --bindu-z-modal: 300;
+  --bindu-z-toast: 400;
+
+  /* ═══════════ 15. APP ALIASES (legacy names used by components) ═══════════ */
+  --bg: var(--bindu-void);
+  --panel: var(--bindu-void-2);
+  --panel-2: var(--bindu-void-1);
+  --panel-3: var(--bindu-void-3);
+  --line: var(--bindu-border-soft);
+  --line-2: var(--bindu-border);
+  --text: var(--bindu-text-primary);
+  --muted: var(--bindu-text-secondary);
+  --muted-2: var(--bindu-text-muted);
+  --accent: var(--bindu-lumen);
+  --accent-soft: var(--bindu-lumen-fill);
+  --ok: var(--bindu-ok);
+  --warn: var(--bindu-warn);
+  --danger: var(--bindu-danger);
+  --shadow: var(--bindu-shadow-lg);
+  --radius: var(--bindu-r-lg);
+  --edge: rgba(245, 245, 240, 0.34); /* workflow connection line @ 26% shunya */
+
+  color-scheme: dark;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --bindu-dur-fast: 0.01ms;
+    --bindu-dur-base: 0.01ms;
+    --bindu-dur-slow: 0.01ms;
+    --bindu-dur-panel: 0.01ms;
+  }
+}

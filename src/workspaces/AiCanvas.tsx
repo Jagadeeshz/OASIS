@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  Background,
   Controls,
   Handle,
   MiniMap,
@@ -32,10 +31,10 @@ function compatible(from: string, to: string) {
 function makeStarter() {
   return {
     nodes: [
-      { id: 'n_prompt', type: 'prompt.text', position: { x: 60, y: 140 }, config: { text: 'A glass observatory above a cloud sea at sunrise, wide lens' } },
-      { id: 'n_model', type: 'model.image', position: { x: 60, y: 40 }, config: { model: 'fal-ai/flux/schnell' } },
-      { id: 'n_gen', type: 'image.generate', position: { x: 360, y: 110 }, config: { model: 'fal-ai/flux/schnell', params: { num_images: 1 } } },
-      { id: 'n_out', type: 'output.save', position: { x: 700, y: 130 }, config: {} },
+      { id: 'n_prompt', type: 'prompt.text', position: { x: 40, y: 200 }, config: { text: 'A glass observatory above a cloud sea at sunrise, wide lens' } },
+      { id: 'n_model', type: 'model.image', position: { x: 40, y: 40 }, config: { model: 'fal-ai/flux/schnell' } },
+      { id: 'n_gen', type: 'image.generate', position: { x: 330, y: 132 }, config: { model: 'fal-ai/flux/schnell', params: { num_images: 1 } } },
+      { id: 'n_out', type: 'output.save', position: { x: 640, y: 140 }, config: {} },
     ],
     edges: [
       { id: 'e1', source: 'n_prompt', sourceHandle: 'prompt', target: 'n_gen', targetHandle: 'prompt' },
@@ -64,9 +63,9 @@ function OasisNode({ data, selected }: any) {
   })();
 
   return (
-    <div className={`node-card ${selected ? 'selected' : ''}`}>
+    <div className={`node-card ${selected ? 'selected' : ''}`} data-category={def?.category}>
       <div className="node-head">
-        <span style={{ opacity: 0.7 }}>◈</span>
+        <span style={{ opacity: 0.85 }}>◆</span>
         <span>{def?.label || data.ntype}</span>
       </div>
       <div className="node-body">
@@ -84,7 +83,9 @@ function OasisNode({ data, selected }: any) {
           id={p.name}
           type="target"
           position={Position.Left}
-          style={{ top: 52 + i * 18, background: p.type === 'image' ? '#5b8cff' : p.type === 'video' ? '#9b7bff' : '#37c391', width: 9, height: 9 }}
+          className="port-handle"
+          data-port={p.type}
+          style={{ top: 52 + i * 18 }}
           title={`${p.name} (${p.type})`}
         />
       ))}
@@ -94,7 +95,9 @@ function OasisNode({ data, selected }: any) {
           id={p.name}
           type="source"
           position={Position.Right}
-          style={{ top: 52 + i * 18, background: p.type === 'image' ? '#5b8cff' : p.type === 'video' ? '#9b7bff' : '#37c391', width: 9, height: 9 }}
+          className="port-handle"
+          data-port={p.type}
+          style={{ top: 52 + i * 18 }}
           title={`${p.name} (${p.type})`}
         />
       ))}
@@ -170,11 +173,9 @@ function CanvasInner() {
           sourceHandle: e.sourceHandle,
           target: e.target,
           targetHandle: e.targetHandle,
-          animated: true,
-          style: { stroke: '#3b4b6d', strokeWidth: 1.6 },
         })),
       );
-      setTimeout(() => fitView({ padding: 0.3, duration: 320 }), 90);
+      setTimeout(() => fitView({ padding: 0.22, maxZoom: 1.05, duration: 320 }), 90);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [assets, defs, nodeStates],
@@ -234,7 +235,7 @@ function CanvasInner() {
         toast(`Cannot connect ${from} to ${to}`, 'warn');
         return;
       }
-      setEdges((eds) => addEdge({ ...params, animated: true, style: { stroke: '#3b4b6d', strokeWidth: 1.6 } }, eds));
+      setEdges((eds) => addEdge({ ...params }, eds));
     },
     [nodes, setEdges, toast],
   );
@@ -358,7 +359,7 @@ function CanvasInner() {
   const fal = providers.find((p) => p.id === 'fal');
 
   return (
-    <div className="canvas-wrap">
+    <div className={`canvas-wrap ${selected ? '' : 'no-inspector'}`}>
       <div className="palette">
         <div className="row between mb-8">
           <strong className="small">Nodes</strong>
@@ -378,7 +379,7 @@ function CanvasInner() {
       <div className="canvas-host" ref={wrapper}>
         <ReactFlow
           nodes={nodes}
-          edges={edges}
+          edges={running ? edges.map((e: any) => ({ ...e, animated: true })) : edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onConnect={onConnect}
@@ -388,14 +389,11 @@ function CanvasInner() {
           onPaneClick={() => setSelectedId(null)}
           fitView
           proOptions={{ hideAttribution: true }}
-          style={{ background: '#0a0d13' }}
-          defaultEdgeOptions={{ animated: true }}
         >
-          <Background color="#1c2333" gap={22} />
           <Controls showInteractive={false} />
-          <MiniMap pannable zoomable style={{ background: '#0d1118', border: '1px solid #232b3b' }} nodeColor="#2b3446" />
+          <MiniMap pannable zoomable style={{ width: 168, height: 104 }} />
         </ReactFlow>
-        <div style={{ position: 'absolute', top: 12, left: 12, right: 12, display: 'flex', gap: 8, alignItems: 'center', pointerEvents: 'auto' }}>
+        <div className="canvas-toolbar">
           <input className="input" style={{ maxWidth: 260 }} value={workflowName} onChange={(e) => setWorkflowName(e.target.value)} />
           <Btn size="sm" variant="ghost" onClick={() => save()} disabled={saving}>
             {saving ? <Spinner /> : null} Save
@@ -410,6 +408,18 @@ function CanvasInner() {
           {fal && !fal.hasSecret ? <Badge tone="warn">fal has no key → mock</Badge> : null}
           {runId ? <Badge tone="info">run {runId.slice(4, 10)}</Badge> : null}
         </div>
+        {!selected ? (
+          <div className="canvas-hint">
+            Click a node to configure it · drag a right-side port to a left-side port to connect · palette adds nodes
+          </div>
+        ) : null}
+        {validation.length ? (
+          <div className="canvas-validation">
+            {validation.slice(0, 3).map((v, i) => (
+              <div key={i}>• {v}</div>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <div className="canvas-side">

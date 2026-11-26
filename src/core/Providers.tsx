@@ -133,7 +133,7 @@ function ProviderCard({ provider, onChange, toast }: { provider: ProviderInfo; o
           <div className="tiny muted-2 mt-8">{provider.capabilities.join(' · ')}</div>
         </div>
         <div className="spacer" />
-        <label className="row" style={{ gap: 6, cursor: 'pointer' }} title={provider.enabled ? 'Disable provider' : 'Enable provider'}>
+        <label className="switch" title={provider.enabled ? 'Disable provider' : 'Enable provider'}>
           <input
             type="checkbox"
             checked={provider.enabled}
@@ -146,7 +146,8 @@ function ProviderCard({ provider, onChange, toast }: { provider: ProviderInfo; o
               }
             }}
           />
-          <span className="tiny">{provider.enabled ? 'enabled' : 'disabled'}</span>
+          <span className="switch-track" aria-hidden="true" />
+          <span className="switch-label">{provider.enabled ? 'enabled' : 'disabled'}</span>
         </label>
       </div>
 

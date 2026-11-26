@@ -17,6 +17,22 @@ const DEFAULT: TimelineData = {
 
 const newId = () => `c_${Math.random().toString(36).slice(2, 8)}`;
 
+// Canvas painting needs literal colours; resolve them from the theme once.
+const tokenCache = new Map<string, string>();
+const cssToken = (name: string, fallback: string) => {
+  const hit = tokenCache.get(name);
+  if (hit) return hit;
+  let value = '';
+  try {
+    value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  } catch {
+    value = '';
+  }
+  const out = value || fallback;
+  tokenCache.set(name, out);
+  return out;
+};
+
 export default function VideoStudio() {
   const { projectId, assets, toast, consumeHandoff, refreshAssets, assetsRev } = useApp();
   const [timelines, setTimelines] = useState<any[]>([]);
@@ -118,7 +134,7 @@ export default function VideoStudio() {
     if (!ctx) return;
     const W = canvas.width;
     const H = canvas.height;
-    ctx.fillStyle = '#000';
+    ctx.fillStyle = cssToken('--bindu-sunken', 'black');
     ctx.fillRect(0, 0, W, H);
 
     const tracks = data.tracks.filter((tr) => tr.type === 'video');
@@ -149,8 +165,8 @@ export default function VideoStudio() {
       for (const c of track.clips) {
         if (t < c.start || t > c.start + c.duration) continue;
         const scale = W / data.width;
-        ctx.font = `600 ${Math.round((c.fontSize || 48) * scale)}px Inter, Segoe UI, sans-serif`;
-        ctx.fillStyle = c.color || '#ffffff';
+        ctx.font = `600 ${Math.round((c.fontSize || 48) * scale)}px 'DM Sans', Segoe UI, sans-serif`;
+        ctx.fillStyle = c.color || cssToken('--bindu-text-primary', 'white');
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         const x = (c.x ?? 0.5) * W;
@@ -160,7 +176,7 @@ export default function VideoStudio() {
           const pad = 14 * scale;
           ctx.fillStyle = 'rgba(0,0,0,0.45)';
           ctx.fillRect(x - m.width / 2 - pad, y - (c.fontSize || 48) * scale * 0.65 - pad, m.width + pad * 2, (c.fontSize || 48) * scale * 1.3 + pad * 2);
-          ctx.fillStyle = c.color || '#ffffff';
+          ctx.fillStyle = c.color || cssToken('--bindu-text-primary', 'white');
         }
         ctx.fillText(c.text || '', x, y);
       }
@@ -271,7 +287,7 @@ export default function VideoStudio() {
                   transition: 'none',
                   text: 'Your title',
                   fontSize: 48,
-                  color: '#ffffff',
+                  color: cssToken('--bindu-text-primary', 'white'),
                   x: 0.5,
                   y: 0.82,
                   box: true,
@@ -515,12 +531,13 @@ export default function VideoStudio() {
             {exporting ? <Spinner /> : null} Export mp4
           </Btn>
         </div>
-        <div style={{ padding: 12, display: 'flex', justifyContent: 'center', background: '#07090d', flex: 1, minHeight: 0 }}>
+        <div className="stage-surface" style={{ padding: 12, display: 'flex', justifyContent: 'center', flex: 1, minHeight: 0 }}>
           <canvas
             ref={canvasRef}
             width={data.width}
             height={data.height}
-            style={{ maxWidth: '100%', maxHeight: '100%', aspectRatio: `${data.width}/${data.height}`, background: '#000', borderRadius: 8, border: '1px solid var(--line)' }}
+            className="preview-canvas"
+            style={{ maxWidth: '100%', maxHeight: '100%', aspectRatio: `${data.width}/${data.height}` }}
             onClick={() => setPlaying((p) => !p)}
           />
         </div>
@@ -656,7 +673,7 @@ export default function VideoStudio() {
                   <input className="input" type="number" value={clip.clip.fontSize || 48} onChange={(e) => patchClip(clip.track.id, clip.clip.id, { fontSize: Number(e.target.value) })} />
                 </Field>
                 <Field label="Colour">
-                  <input className="input" type="color" value={clip.clip.color || '#ffffff'} onChange={(e) => patchClip(clip.track.id, clip.clip.id, { color: e.target.value })} />
+                  <input className="input" type="color" value={clip.clip.color || cssToken('--bindu-text-primary', 'white')} onChange={(e) => patchClip(clip.track.id, clip.clip.id, { color: e.target.value })} />
                 </Field>
               </div>
               <Field label="Vertical position">
