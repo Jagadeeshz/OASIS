@@ -28,48 +28,63 @@ jobs:
           name: oasis-windows-x64
           path: release/*.exe
 
-  macos-arm64:
+  macos:
+    name: macOS ${{ matrix.label }}
     runs-on: macos-latest
-    env:
-      CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.MAC_CERT_P12 == '' && 'false' || 'true' }}
-      CSC_LINK: ${{ secrets.MAC_CERT_P12 }}
-      CSC_KEY_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
-      APPLE_ID: ${{ secrets.APPLE_ID }}
-      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            label: Apple Silicon (arm64)
+            artifact: oasis-macos-arm64
+          - arch: x64
+            label: Intel (x64)
+            artifact: oasis-macos-x64
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 24, cache: npm }
+        with:
+          node-version: 24
+          cache: npm
       - run: npm ci
       - run: npm test
-      - run: npm run package:mac -- --arm64
-      - uses: actions/upload-artifact@v4
-        with:
-          name: oasis-macos-arm64
-          path: |
-            release/*.dmg
-            release/*.zip
 
-  macos-x64:
-    runs-on: macos-latest
-    env:
-      CSC_IDENTITY_AUTO_DISCOVERY: ${{ secrets.MAC_CERT_P12 == '' && 'false' || 'true' }}
-      CSC_LINK: ${{ secrets.MAC_CERT_P12 }}
-      CSC_KEY_PASSWORD: ${{ secrets.MAC_CERT_PASSWORD }}
-      APPLE_ID: ${{ secrets.APPLE_ID }}
-      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: { node-version: 24, cache: npm }
-      - run: npm ci
-      - run: npm test
-      - run: npm run package:mac -- --x64
+      # Secrets arrive as empty strings when unset, and electron-builder treats an
+      # empty CSC_LINK as a path ("<projectDir> not a file"). Export only non-empty.
+      - name: Package DMG + ZIP
+        shell: bash
+        env:
+          CERT_IN: ${{ secrets.MAC_CERT_P12 }}
+          CERT_PW_IN: ${{ secrets.MAC_CERT_PASSWORD }}
+          APPLE_ID_IN: ${{ secrets.APPLE_ID }}
+          APPLE_PW_IN: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_IN: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          [ -n "$CERT_IN" ] && export CSC_LINK="$CERT_IN"
+          [ -n "$CERT_PW_IN" ] && export CSC_KEY_PASSWORD="$CERT_PW_IN"
+          [ -n "$APPLE_ID_IN" ] && export APPLE_ID="$APPLE_ID_IN"
+          [ -n "$APPLE_PW_IN" ] && export APPLE_APP_SPECIFIC_PASSWORD="$APPLE_PW_IN"
+          [ -n "$APPLE_TEAM_IN" ] && export APPLE_TEAM_ID="$APPLE_TEAM_IN"
+          if [ -z "$CSC_LINK" ]; then echo "no certificate secret - building unsigned"; fi
+          npm run package:mac -- --${{ matrix.arch }}
+
+      - name: Verify artifacts
+        shell: bash
+        run: |
+          ls -lh release/*.dmg release/*.zip
+          DMG=$(ls release/*.dmg | head -1)
+          hdiutil attach "$DMG" -nobrowse -quiet
+          APP=$(ls -d /Volumes/OASIS*/OASIS.app | head -1)
+          echo "mounted: $APP"
+          file "$APP/Contents/MacOS/OASIS"
+          codesign -dv "$APP" 2>&1 | head -6 || echo "unsigned bundle"
+          hdiutil detach "$(dirname "$APP")" -quiet || true
+
       - uses: actions/upload-artifact@v4
         with:
-          name: oasis-macos-x64
+          name: ${{ matrix.artifact }}
           path: |
             release/*.dmg
             release/*.zip
+          if-no-files-found: error
