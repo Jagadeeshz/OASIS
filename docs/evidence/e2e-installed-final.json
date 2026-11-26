@@ -1,0 +1,42 @@
+[
+  {
+    "name": "dashboard renders project context",
+    "ok": true,
+    "detail": "Welcome project / Welcome project"
+  },
+  {
+    "name": "PhotoCraft mock generation produces labelled asset",
+    "ok": true,
+    "detail": "CARDS:2 (model:OK, prompt:OK)"
+  },
+  {
+    "name": "Asset Studio shows generated asset with provenance",
+    "ok": true,
+    "detail": "7 cards"
+  },
+  {
+    "name": "AI Canvas executes workflow nodes",
+    "ok": true,
+    "detail": "nodes:4, DONE:4"
+  },
+  {
+    "name": "Video Studio builds a timeline and exports a real mp4",
+    "ok": true,
+    "detail": "clips:5, add:OK, export:SUCCEEDED"
+  },
+  {
+    "name": "Provider settings exposes three independent providers",
+    "ok": true,
+    "detail": "{\"cards\":[\"fal.ai\",\"DeepSeek\",\"Ollama\"],\"falNoKey\":true}"
+  },
+  {
+    "name": "Job manager lists queued/completed work",
+    "ok": true,
+    "detail": "6 rows"
+  },
+  {
+    "name": "Export manager shows manifest provenance",
+    "ok": true,
+    "detail": ""
+  }
+]
