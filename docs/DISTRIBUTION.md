@@ -15,8 +15,10 @@ Electron and `sql.js` are both pure-JS/wasm at runtime — there is no native mo
 ```bash
 npm install
 npm run package:win     # Windows x64 NSIS installer
-npm run package:mac     # macOS DMG + ZIP for arm64 and x64 (run on macOS)
-npm run package:all     # both, on a Mac
+npm run package:mac              # macOS DMG + ZIP for the host arch
+npm run package:mac -- --arm64   # Apple Silicon explicitly
+npm run package:mac -- --x64     # Intel explicitly
+npm run package:all              # Windows + macOS host arch, on a Mac
 npm run package:dir     # unpacked app for smoke tests
 ```
 
